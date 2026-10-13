@@ -6,7 +6,6 @@ import ac.sfj.miniappcompetition.ui.component.foundation.AppIcons
 import ac.sfj.miniappcompetition.ui.component.foundation.ComponentPreviews
 import ac.sfj.miniappcompetition.ui.component.foundation.PreviewSurface
 import ac.sfj.miniappcompetition.ui.theme.Dimens
-import androidx.annotation.DrawableRes
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -16,6 +15,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.vector.ImageVector
 
 /** Satu aksi di [BottomActionBar]. */
 data class BarAction(
@@ -23,7 +23,7 @@ data class BarAction(
     val onClick: () -> Unit,
     val enabled: Boolean = true,
     val loading: Boolean = false,
-    @DrawableRes val icon: Int? = null,
+    val icon: ImageVector? = null,
 )
 
 /**

@@ -6,7 +6,6 @@ import ac.sfj.miniappcompetition.ui.component.foundation.AppIcons
 import ac.sfj.miniappcompetition.ui.component.foundation.ComponentPreviews
 import ac.sfj.miniappcompetition.ui.component.foundation.PreviewSurface
 import ac.sfj.miniappcompetition.ui.theme.Dimens
-import androidx.annotation.DrawableRes
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -22,7 +21,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
 
 /** Warna [InfoBanner]. */
@@ -41,7 +40,7 @@ enum class BannerTone {
 @Composable
 fun InfoBanner(
     text: String,
-    @DrawableRes icon: Int,
+    icon: ImageVector,
     modifier: Modifier = Modifier,
     tone: BannerTone = BannerTone.Info,
     actionLabel: String? = null,
@@ -65,7 +64,7 @@ fun InfoBanner(
         ) {
             Row(verticalAlignment = Alignment.Top) {
                 Icon(
-                    painter = painterResource(icon),
+                    imageVector = icon,
                     contentDescription = null,
                     modifier = Modifier.size(20.dp),
                 )

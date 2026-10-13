@@ -3,7 +3,6 @@ package ac.sfj.miniappcompetition.ui.component.atom
 import ac.sfj.miniappcompetition.ui.component.foundation.AppIcons
 import ac.sfj.miniappcompetition.ui.component.foundation.ComponentPreviews
 import ac.sfj.miniappcompetition.ui.component.foundation.PreviewSurface
-import androidx.annotation.DrawableRes
 import androidx.compose.foundation.layout.Row
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -12,7 +11,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.isSpecified
-import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.graphics.vector.ImageVector
 
 /** Varian [AppIconButton]. */
 enum class AppIconButtonVariant {
@@ -31,7 +30,7 @@ enum class AppIconButtonVariant {
  */
 @Composable
 fun AppIconButton(
-    @DrawableRes icon: Int,
+    icon: ImageVector,
     contentDescription: String,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
@@ -40,11 +39,10 @@ fun AppIconButton(
     tint: Color = Color.Unspecified,
 ) {
     val iconContent: @Composable () -> Unit = {
-        val painter = painterResource(icon)
         if (tint.isSpecified) {
-            Icon(painter = painter, contentDescription = contentDescription, tint = tint)
+            Icon(imageVector = icon, contentDescription = contentDescription, tint = tint)
         } else {
-            Icon(painter = painter, contentDescription = contentDescription)
+            Icon(imageVector = icon, contentDescription = contentDescription)
         }
     }
 

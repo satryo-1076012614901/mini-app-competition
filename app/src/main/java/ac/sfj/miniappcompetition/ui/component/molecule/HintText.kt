@@ -4,7 +4,6 @@ import ac.sfj.miniappcompetition.ui.component.foundation.AppIcons
 import ac.sfj.miniappcompetition.ui.component.foundation.ComponentPreviews
 import ac.sfj.miniappcompetition.ui.component.foundation.PreviewSurface
 import ac.sfj.miniappcompetition.ui.theme.Dimens
-import androidx.annotation.DrawableRes
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -17,7 +16,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
 
 /** Warna [HintText]. */
@@ -31,7 +30,7 @@ enum class HintTone { Neutral, Error }
 fun HintText(
     text: String,
     modifier: Modifier = Modifier,
-    @DrawableRes icon: Int? = null,
+    icon: ImageVector? = null,
     tone: HintTone = HintTone.Neutral,
 ) {
     val color = when (tone) {
@@ -41,7 +40,7 @@ fun HintText(
     Row(modifier = modifier, verticalAlignment = Alignment.Top) {
         if (icon != null) {
             Icon(
-                painter = painterResource(icon),
+                imageVector = icon,
                 contentDescription = null,
                 modifier = Modifier.size(16.dp),
                 tint = color,

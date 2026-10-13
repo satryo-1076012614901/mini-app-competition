@@ -15,7 +15,6 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.res.painterResource
 
 /**
  * Field input satu baris berbasis `OutlinedTextField` (Referensi UI hal. 6).
@@ -53,7 +52,7 @@ fun AppTextField(
             null
         },
         trailingIcon = if (isError) {
-            { Icon(painter = painterResource(AppIcons.Error), contentDescription = null) }
+            { Icon(imageVector = AppIcons.Error, contentDescription = null) }
         } else {
             null
         },

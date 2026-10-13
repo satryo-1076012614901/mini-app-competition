@@ -7,7 +7,6 @@ import ac.sfj.miniappcompetition.ui.component.foundation.AppIcons
 import ac.sfj.miniappcompetition.ui.component.foundation.ComponentPreviews
 import ac.sfj.miniappcompetition.ui.component.foundation.PreviewSurface
 import ac.sfj.miniappcompetition.ui.theme.Dimens
-import androidx.annotation.DrawableRes
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -19,6 +18,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.style.TextAlign
 
 /**
@@ -29,10 +29,10 @@ import androidx.compose.ui.text.style.TextAlign
 fun EmptyState(
     title: String,
     message: String,
-    @DrawableRes icon: Int,
+    icon: ImageVector,
     modifier: Modifier = Modifier,
     actionLabel: String? = null,
-    @DrawableRes actionIcon: Int? = null,
+    actionIcon: ImageVector? = null,
     onAction: (() -> Unit)? = null,
 ) {
     Column(

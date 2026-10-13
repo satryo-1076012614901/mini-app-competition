@@ -29,7 +29,6 @@ import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.res.painterResource
 
 /**
  * Kerangka layar daftar: app bar, slot filter, konten dengan pull-to-refresh, FAB, dan snackbar
@@ -109,7 +108,7 @@ private fun ListScreenTemplatePreview() {
             floatingActionButton = {
                 ExtendedFloatingActionButton(
                     text = { Text(text = "Buat kompetisi") },
-                    icon = { Icon(painter = painterResource(AppIcons.Add), contentDescription = null) },
+                    icon = { Icon(imageVector = AppIcons.Add, contentDescription = null) },
                     onClick = {},
                 )
             },

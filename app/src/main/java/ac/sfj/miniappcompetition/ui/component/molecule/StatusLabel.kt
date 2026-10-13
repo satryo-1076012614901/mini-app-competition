@@ -24,7 +24,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 
 /** Warna [StatusLabel] (Referensi UI hal. 5). */
@@ -96,7 +95,7 @@ fun StatusLabel(
 
                 StatusLeading.Check -> {
                     Icon(
-                        painter = painterResource(AppIcons.Check),
+                        imageVector = AppIcons.Check,
                         contentDescription = null,
                         modifier = Modifier.size(14.dp),
                     )

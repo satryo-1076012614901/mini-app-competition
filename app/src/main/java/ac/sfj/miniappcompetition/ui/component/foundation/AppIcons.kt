@@ -1,37 +1,39 @@
 package ac.sfj.miniappcompetition.ui.component.foundation
 
-import ac.sfj.miniappcompetition.R
-import androidx.annotation.DrawableRes
+import androidx.compose.ui.graphics.vector.ImageVector
 
 /**
- * Ikon Material Symbols Outlined (weight 400) yang dipakai aplikasi (Referensi UI hal. 6).
+ * Ikon Material Symbols Outlined (weight 400) yang dipakai aplikasi (Referensi UI hal. 6),
+ * dibangun sebagai [ImageVector] di Kotlin, tanpa vector drawable XML dan tanpa library ikon.
  *
- * Nilainya ID vector drawable di `res/drawable`; tampilkan dengan `painterResource(AppIcons.X)`.
+ * Tampilkan dengan `Icon(imageVector = AppIcons.X, contentDescription = ...)`.
  * Catatan: ikon `emoji_events` pada Referensi UI kini bernama `trophy` di Material Symbols.
  */
 object AppIcons {
-    @DrawableRes val AccountTree: Int = R.drawable.ic_account_tree
-    @DrawableRes val Add: Int = R.drawable.ic_add
-    @DrawableRes val ArrowBack: Int = R.drawable.ic_arrow_back
-    @DrawableRes val Check: Int = R.drawable.ic_check
+    val AccountTree: ImageVector by lazy { materialSymbol("AccountTree", MaterialSymbolPaths.AccountTree) }
+    val Add: ImageVector by lazy { materialSymbol("Add", MaterialSymbolPaths.Add) }
+    val ArrowBack: ImageVector by lazy {
+        materialSymbol("ArrowBack", MaterialSymbolPaths.ArrowBack, autoMirror = true)
+    }
+    val Check: ImageVector by lazy { materialSymbol("Check", MaterialSymbolPaths.Check) }
 
     /** Varian filled, penanda pemenang. */
-    @DrawableRes val CheckCircle: Int = R.drawable.ic_check_circle
-    @DrawableRes val Close: Int = R.drawable.ic_close
-    @DrawableRes val Delete: Int = R.drawable.ic_delete
+    val CheckCircle: ImageVector by lazy { materialSymbol("CheckCircle", MaterialSymbolPaths.CheckCircle) }
+    val Close: ImageVector by lazy { materialSymbol("Close", MaterialSymbolPaths.Close) }
+    val Delete: ImageVector by lazy { materialSymbol("Delete", MaterialSymbolPaths.Delete) }
 
     /** Varian filled, ikon error pada field. */
-    @DrawableRes val Error: Int = R.drawable.ic_error
-    @DrawableRes val Groups: Int = R.drawable.ic_groups
-    @DrawableRes val Info: Int = R.drawable.ic_info
-    @DrawableRes val Lock: Int = R.drawable.ic_lock
-    @DrawableRes val MoreVert: Int = R.drawable.ic_more_vert
-    @DrawableRes val Person: Int = R.drawable.ic_person
-    @DrawableRes val Remove: Int = R.drawable.ic_remove
+    val Error: ImageVector by lazy { materialSymbol("Error", MaterialSymbolPaths.Error) }
+    val Groups: ImageVector by lazy { materialSymbol("Groups", MaterialSymbolPaths.Groups) }
+    val Info: ImageVector by lazy { materialSymbol("Info", MaterialSymbolPaths.Info) }
+    val Lock: ImageVector by lazy { materialSymbol("Lock", MaterialSymbolPaths.Lock) }
+    val MoreVert: ImageVector by lazy { materialSymbol("MoreVert", MaterialSymbolPaths.MoreVert) }
+    val Person: ImageVector by lazy { materialSymbol("Person", MaterialSymbolPaths.Person) }
+    val Remove: ImageVector by lazy { materialSymbol("Remove", MaterialSymbolPaths.Remove) }
 
     /** Lingkaran dengan tanda minus (Material Symbols `do_not_disturb_on`). */
-    @DrawableRes val RemoveCircle: Int = R.drawable.ic_remove_circle
-    @DrawableRes val RestartAlt: Int = R.drawable.ic_restart_alt
-    @DrawableRes val Trophy: Int = R.drawable.ic_trophy
-    @DrawableRes val Undo: Int = R.drawable.ic_undo
+    val RemoveCircle: ImageVector by lazy { materialSymbol("RemoveCircle", MaterialSymbolPaths.RemoveCircle) }
+    val RestartAlt: ImageVector by lazy { materialSymbol("RestartAlt", MaterialSymbolPaths.RestartAlt) }
+    val Trophy: ImageVector by lazy { materialSymbol("Trophy", MaterialSymbolPaths.Trophy) }
+    val Undo: ImageVector by lazy { materialSymbol("Undo", MaterialSymbolPaths.Undo, autoMirror = true) }
 }

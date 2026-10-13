@@ -18,7 +18,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.res.painterResource
 
 /** Satu pilihan di [FilterChipRow]. */
 data class FilterOption<T>(val value: T, val label: String)
@@ -51,7 +50,7 @@ fun <T> FilterChipRow(
                 leadingIcon = if (isSelected) {
                     {
                         Icon(
-                            painter = painterResource(AppIcons.Check),
+                            imageVector = AppIcons.Check,
                             contentDescription = null,
                             modifier = Modifier.size(FilterChipDefaults.IconSize),
                         )

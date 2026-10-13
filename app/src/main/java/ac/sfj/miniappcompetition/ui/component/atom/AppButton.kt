@@ -4,7 +4,6 @@ import ac.sfj.miniappcompetition.ui.component.foundation.AppIcons
 import ac.sfj.miniappcompetition.ui.component.foundation.ComponentPreviews
 import ac.sfj.miniappcompetition.ui.component.foundation.PreviewSurface
 import ac.sfj.miniappcompetition.ui.theme.Dimens
-import androidx.annotation.DrawableRes
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.RowScope
@@ -23,7 +22,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
 
 /** Varian [AppButton]; masing-masing dipetakan ke tombol Material 3. */
@@ -58,7 +57,7 @@ fun AppButton(
     variant: AppButtonVariant = AppButtonVariant.Filled,
     enabled: Boolean = true,
     loading: Boolean = false,
-    @DrawableRes leadingIcon: Int? = null,
+    leadingIcon: ImageVector? = null,
 ) {
     val isEnabled = enabled && !loading
     val content: @Composable RowScope.() -> Unit = {
@@ -71,7 +70,7 @@ fun AppButton(
             Spacer(Modifier.width(ButtonDefaults.IconSpacing))
         } else if (leadingIcon != null) {
             Icon(
-                painter = painterResource(leadingIcon),
+                imageVector = leadingIcon,
                 contentDescription = null,
                 modifier = Modifier.size(ButtonDefaults.IconSize),
             )

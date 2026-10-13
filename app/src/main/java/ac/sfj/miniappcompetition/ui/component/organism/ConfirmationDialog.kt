@@ -6,13 +6,12 @@ import ac.sfj.miniappcompetition.ui.component.atom.AppButtonVariant
 import ac.sfj.miniappcompetition.ui.component.foundation.AppIcons
 import ac.sfj.miniappcompetition.ui.component.foundation.ComponentPreviews
 import ac.sfj.miniappcompetition.ui.component.foundation.PreviewSurface
-import androidx.annotation.DrawableRes
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
 
 /**
@@ -28,7 +27,7 @@ fun ConfirmationDialog(
     onConfirm: () -> Unit,
     onDismiss: () -> Unit,
     modifier: Modifier = Modifier,
-    @DrawableRes icon: Int? = null,
+    icon: ImageVector? = null,
     destructive: Boolean = false,
     confirmLoading: Boolean = false,
     dismissLabel: String = stringResource(R.string.action_cancel),
@@ -53,7 +52,7 @@ fun ConfirmationDialog(
             )
         },
         icon = if (icon != null) {
-            { Icon(painter = painterResource(icon), contentDescription = null) }
+            { Icon(imageVector = icon, contentDescription = null) }
         } else {
             null
         },
