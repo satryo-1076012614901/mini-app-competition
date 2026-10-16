@@ -476,6 +476,8 @@ StatusLabel(text = "Berlangsung", tone = StatusTone.Tertiary, leading = StatusLe
 StatusLabel(text = "Bye", tone = StatusTone.Outline, dashed = true)
 ```
 
+Untuk status kompetisi, pakai `CompetitionStatusLabel(status)` dari `ui/shared` ([bagian 5](#5-shared-ui-uishared)) yang sudah menerapkan tiga baris pertama tabel ini.
+
 **Layar daftar** (hal. 7–8): memuat, gagal, kosong, dan berisi.
 
 ```kotlin
@@ -523,13 +525,12 @@ ListScreenTemplate(
         )
         else -> LazyColumn(contentPadding = contentPadding) {
             items(competitions, key = { it.id }) { competition ->
+                val type = stringResource(competition.participantType.labelRes)
                 AppListItem(
                     headline = competition.name,
-                    supporting = "Tim, dibuat 6 Okt 2026",
-                    leading = {
-                        AppAvatar(icon = if (competition.participantType == ParticipantType.TEAM) AppIcons.Groups else AppIcons.Person)
-                    },
-                    trailing = { StatusLabel(text = "Pendaftaran", tone = StatusTone.Primary) },
+                    supporting = "$type, dibuat ${formatDisplayDate(competition.createdAt)}",   // "Tim, dibuat 6 Okt 2026"
+                    leading = { AppAvatar(icon = competition.participantType.icon) },
+                    trailing = { CompetitionStatusLabel(competition.status) },
                     onClick = { onOpenCompetition(competition.id) },
                 )
             }
@@ -564,8 +565,11 @@ DetailTabsTemplate(
             horizontalArrangement = Arrangement.spacedBy(Dimens.SpaceSm),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            StatusLabel(text = "Pendaftaran", tone = StatusTone.Primary)
-            Text(text = "Tim", style = MaterialTheme.typography.bodyMedium)
+            CompetitionStatusLabel(competition.status)
+            Text(
+                text = stringResource(competition.participantType.labelRes),
+                style = MaterialTheme.typography.bodyMedium,
+            )
         }
     },
 ) { contentPadding ->
@@ -705,7 +709,7 @@ ScrollableTabs(
 )
 ```
 
-`roundLabel` mengubah `RoundName` menjadi "Babak n", "Semifinal", atau "Final"; fungsi ini termasuk isi `ui/shared` (bagian 5).
+`roundLabel` mengubah `RoundName` menjadi "Babak n", "Semifinal", atau "Final"; fungsi ini ditambahkan pemilik modul Match di `ui/shared/MatchDisplay.kt` (bagian 5).
 
 **Kartu match dan kartu Juara** (hal. 11–14) adalah tampilan khusus modul Match, sehingga dibuat di `ui/feature/match/view`, bukan di `ui/component`. Susun dari `OutlinedCard`, `ScoreText`, `StatusLabel`, dan `AppButton`:
 
@@ -747,36 +751,49 @@ Untuk preview layar, bungkus `…Content` dengan `MiniAppCompetitionTheme { }` d
 |---|---|---|
 | Isi | Composable visual yang dipakai ulang | Pemetaan data ke tampilan dan teks, dipakai lebih dari satu fitur |
 | Mengenal data domain | Tidak | Ya (`data/model`, `data/rule`) |
-| Contoh | `StatusLabel`, `FormBottomSheet` | `AppError` ke teks pesan, `CompetitionStatus` ke parameter `StatusLabel` |
+| Contoh | `StatusLabel`, `FormBottomSheet` | `AppError.toErrorMessage()`, `CompetitionStatusLabel` |
 
-**Status: folder ini belum berisi kode.** Isi yang direncanakan:
+Isi saat ini, yaitu bagian Competition dan bagian bersama:
 
-| Helper | Sumber aturan |
-|---|---|
-| `AppError` dan `ApiErrorCode` ke teks pesan dan jenis tampilannya (snackbar, inline, error state) | Referensi UI hal. 15 dan [bagian 6](#6-penanganan-error) |
-| `CompetitionStatus` dan status match ke parameter `StatusLabel` | [Tabel label status](#45-resep-pemakaian) |
-| `RoundName` ke teks "Babak n", "Semifinal", "Final" | Referensi UI hal. 4 |
-| Asal slot kosong ke teks "Pemenang Babak 1 Match 1" atau "Pemenang Semifinal 1" | Referensi UI hal. 4 dan 12 |
-| `ParticipantType` ke "Individu" atau "Tim" beserta ikonnya | Referensi UI hal. 6–7 |
-| Format tanggal `createdAt`, mis. "dibuat 6 Okt 2026" | Referensi UI hal. 7 |
+| File | Isi | Sumber aturan |
+|---|---|---|
+| `ErrorMessage.kt` | `AppError.toErrorMessage()` menghasilkan `ErrorMessage(textRes, retryable)`: teks pesan dan penanda aksi Coba lagi | Referensi UI hal. 15 dan [bagian 6](#6-penanganan-error) |
+| `CompetitionDisplay.kt` | `CompetitionStatus.labelRes` dan `CompetitionStatusLabel(status)`; `ParticipantType.labelRes` ("Individu" atau "Tim") dan `ParticipantType.icon` (`Person` atau `Groups`) | Hal. 3, 5, 6, dan 7 |
+| `DisplayDate.kt` | `formatDisplayDate(instant)` menghasilkan "6 Okt 2026": nama bulan selalu berbahasa Indonesia, tanggal mengikuti zona waktu perangkat | Hal. 7 |
+
+```kotlin
+CompetitionStatusLabel(competition.status)                         // label dengan warna dan penanda status
+AppAvatar(icon = competition.participantType.icon)                // ikon person atau groups
+Text(stringResource(competition.participantType.labelRes))        // "Individu" atau "Tim"
+Text("dibuat ${formatDisplayDate(competition.createdAt)}")        // "dibuat 6 Okt 2026"
+FilterOption(value = status, label = stringResource(status.labelRes))
+```
+
+Bagian berikut ditambahkan pemilik modul saat modulnya dibuka:
+
+| Modul | Tambahan | Sumber aturan |
+|---|---|---|
+| Participant | Cabang `when` di `ErrorMessage.kt` untuk `MEMBERS_NOT_ALLOWED`, `PARTICIPANT_NOT_FOUND`, dan `DUPLICATE_PARTICIPANT_NAME` | Hal. 15 |
+| Match | Cabang `when` di `ErrorMessage.kt` untuk kode error Match. `MatchDisplay.kt` berisi label status match ([tabel label status](#45-resep-pemakaian)), `RoundName` ke "Babak n", "Semifinal", atau "Final", dan asal slot kosong ke "Pemenang Babak 1 Match 1" atau "Pemenang Semifinal 1" | Hal. 3, 4, 12, dan 15 |
 
 Aturan `ui/shared`:
 
 1. Berisi fungsi murni atau fungsi `@Composable` yang membaca `stringResource`; tidak memanggil repository atau ViewModel.
 2. Setiap pemetaan hanya ada satu, dipakai semua fitur, agar pesan dan label konsisten.
-3. Bila Anda membutuhkan helper di atas sebelum tersedia, tambahkan ke `ui/shared` (bukan ke folder fitur) dan informasikan ke tim agar tidak terjadi duplikasi.
+3. Pemetaan model ke teks, ikon, atau label ditaruh di `<Modul>Display.kt`, misalnya `MatchDisplay.kt`. Teks baru masuk ke `strings.xml` dengan awalan sesuai topik, misalnya `match_status_…` atau `error_…`.
+4. Bila Anda membutuhkan helper yang belum tersedia, tambahkan ke `ui/shared` (bukan ke folder fitur) dan informasikan ke tim agar tidak terjadi duplikasi.
 
 ---
 
 ## 6. Penanganan error
 
-Alur: repository mengembalikan `AppResult.Failure(error)`, ViewModel menyimpannya di UiState, lalu View menampilkan pesan hasil pemetaan `ui/shared`. Teks dipetakan dari `code`, bukan dari `message` backend.
+Alur: repository mengembalikan `AppResult.Failure(error)`, ViewModel menyimpannya di UiState, lalu View menampilkan pesan dari `error.toErrorMessage()` (`ui/shared/ErrorMessage.kt`). Teks dipetakan dari `code`, bukan dari `message` backend.
 
 | Kode / `AppError` | HTTP | Kapan muncul | Tampilan dan pesan (Referensi UI hal. 15) |
 |---|---|---|---|
 | `VALIDATION_ERROR` | 400 | Body tidak valid | Dicegah validasi client. Bila tetap muncul: snackbar "Periksa kembali isian yang ditandai." |
 | `DUPLICATE_PARTICIPANT_NAME` | 409 | Nama peserta sudah ada | Inline di field nama: "Nama ini sudah dipakai di kompetisi ini." |
-| `PARTICIPANT_TYPE_LOCKED` | 409 | Jenis peserta diubah saat sudah ada peserta | Dicegah UI (segmen dikunci). Fallback inline di bawah segmen |
+| `PARTICIPANT_TYPE_LOCKED` | 409 | Jenis peserta diubah saat sudah ada peserta | Dicegah UI (segmen dikunci). Fallback inline di bawah segmen: "Terkunci karena kompetisi sudah memiliki peserta" (teks hal. 7) |
 | `MEMBERS_NOT_ALLOWED` | 400 | Anggota dikirim untuk kompetisi Individu | Dicegah UI. Fallback snackbar "Data peserta tidak valid." |
 | `COMPETITION_NOT_OPEN` | 409 | Aksi pendaftaran saat bracket sudah dibuat | Snackbar "Kompetisi sudah berjalan. Data dimuat ulang." lalu muat ulang |
 | `COMPETITION_NOT_IN_MATCH` | 409 | Input hasil atau reset saat kompetisi tidak berlangsung | Snackbar "Bracket sudah tidak aktif. Data dimuat ulang." lalu muat ulang |
@@ -789,10 +806,36 @@ Alur: repository mengembalikan `AppResult.Failure(error)`, ViewModel menyimpanny
 | `HTTP_ERROR` | lainnya | Error HTTP selain 400 dari Spring MVC | Snackbar "Permintaan tidak dapat diproses." |
 | `INTERNAL_SERVER_ERROR` | 500 | Exception tidak tertangani di server | Snackbar "Terjadi kendala di server." dengan aksi Coba lagi |
 | `AppError.Network` | – | Offline atau timeout | "Tidak dapat terhubung ke server. Periksa koneksi." dengan aksi Coba lagi |
+| `AppError.Http` 5xx, `AppError.InvalidResponse` | 5xx / – | Error server tanpa body backend (misalnya dari proxy), atau respons tidak cocok dengan DTO | Snackbar "Terjadi kendala di server." dengan aksi Coba lagi (*) |
+| `AppError.Http` selain 5xx, `UNKNOWN` | lainnya | Error HTTP tanpa body backend, atau kode error yang belum dikenal aplikasi | Snackbar "Permintaan tidak dapat diproses." (*) |
+
+(*) Tidak diatur Referensi UI; ditetapkan tim saat `ui/shared` dibuat.
 
 Sebagian besar error 409 berarti data di layar sudah basi. Pola umumnya: tampilkan snackbar singkat, lalu muat ulang detail kompetisi, peserta, dan match.
 
-`AppError.Http`, `AppError.InvalidResponse`, dan `ApiErrorCode.UNKNOWN` belum diatur di Referensi UI; pesannya ditetapkan saat `ui/shared` dibuat.
+**Menampilkan pesan.** `toErrorMessage()` hanya menentukan teks dan aksi Coba lagi. Tempat pesan tampil (snackbar, inline di field, atau error state) dan tindak lanjutnya (muat ulang atau kembali) ditentukan layar sesuai tabel di atas. Contoh error aksi yang ditampilkan sekali sebagai snackbar:
+
+```kotlin
+val error = uiState.actionError                                       // AppError? di UiState
+if (error != null) {
+    val message = error.toErrorMessage()
+    val text = stringResource(message.textRes)                        // stringResource hanya dapat dipanggil di composable
+    val retryLabel = if (message.retryable) stringResource(R.string.action_retry) else null
+    LaunchedEffect(error) {
+        val result = snackbarHostState.showSnackbar(
+            message = text,
+            actionLabel = retryLabel,
+            duration = if (retryLabel != null) SnackbarDuration.Long else SnackbarDuration.Short,
+        )
+        onErrorShown()                                                // ViewModel mengosongkan actionError
+        if (result == SnackbarResult.ActionPerformed) onRetry()
+    }
+}
+```
+
+- Gagal memuat saat belum ada data ditampilkan dengan `ErrorState`, memakai teks layar tersebut bila Referensi UI menyediakannya (hal. 8 untuk daftar kompetisi).
+- Aksi Coba lagi menjalankan ulang operasi yang gagal. Untuk aksi yang membuat data baru, misalnya Buat kompetisi, timeout dapat terjadi setelah data tersimpan di server. Muat ulang data sebelum mengirim ulang agar tidak terbentuk data ganda.
+- Kode error modul Participant dan Match dipetakan dengan menambah cabang `when` di `ErrorMessage.kt`, bukan cabang `else`, beserta teksnya di `strings.xml` dengan awalan `error_`. Kode `PARTICIPANT_NOT_FOUND` dan `MATCH_NOT_FOUND` memakai `R.string.error_not_found` yang sudah ada.
 
 ---
 
@@ -823,13 +866,55 @@ Status kompetisi dibaca dari satu sumber (`Competition.status` di `CompetitionRe
 
 ## 8. Routing
 
-**Status: belum dibuat.** Rencana sesuai keputusan desain:
+Navigation Compose 2.10 dengan route type-safe. Destinasi mengikuti Referensi UI hal. 2: **Daftar kompetisi** (layar awal) dan **Detail kompetisi** (tab Peserta dan Bracket). Layar bracket penuh tidak digunakan.
 
-- Navigation Compose 2.10 dengan route type-safe: setiap route berupa `@Serializable` object atau data class.
-- Route berada di `routing/AppRoute.kt` dan `NavHost` di `routing/AppRouting.kt`, dipanggil dari `MainActivity`.
-- Destinasi layar mengikuti Referensi UI hal. 2: **Daftar kompetisi** (layar awal) dan **Detail kompetisi** (tab Peserta dan Bracket). Layar bracket penuh tidak digunakan.
-- Sheet dan dialog (buat/ubah kompetisi, form peserta, input hasil, konfirmasi) adalah overlay di layar asal, bukan route.
-- ViewModel layar detail membaca argumen route lewat `SavedStateHandle` (`createSavedStateHandle()` di factory, lalu `toRoute<…>()`).
+| File | Isi |
+|---|---|
+| `routing/AppRoute.kt` | `sealed interface AppRoute` dengan `CompetitionList` (`data object`) dan `CompetitionDetail(competitionId: Long)` (`data class`), keduanya `@Serializable` |
+| `routing/AppRouting.kt` | `NavHost` yang memetakan setiap route ke layar; dipanggil dari `MainActivity` |
+
+Aturan:
+
+1. Sheet dan dialog (buat/ubah kompetisi, form peserta, input hasil, konfirmasi) adalah overlay di layar asal, bukan route.
+2. Layar tidak menerima `NavController`. Argumen route diteruskan sebagai parameter biasa, dan navigasi diminta lewat callback:
+
+```kotlin
+composable<AppRoute.CompetitionDetail> { entry ->
+    val route = entry.toRoute<AppRoute.CompetitionDetail>()
+    CompetitionDetailScreen(
+        competitionId = route.competitionId,
+        onNavigateBack = { navController.navigateUp() },
+    )
+}
+```
+
+3. ViewModel layar detail menerima `competitionId` lewat factory, bukan membaca `SavedStateHandle`, agar ViewModel tidak bergantung pada `routing` dan dapat diuji dengan fake repository tanpa Android:
+
+```kotlin
+class CompetitionDetailViewModel(
+    private val competitionId: Long,
+    private val competitionRepository: CompetitionRepository,
+) : ViewModel() {
+    // ...
+    companion object {
+        fun factory(competitionId: Long): ViewModelProvider.Factory = viewModelFactory {
+            initializer {
+                val application = this[APPLICATION_KEY] as MiniCompetitionApplication
+                CompetitionDetailViewModel(competitionId, application.competitionContainer.competitionRepository)
+            }
+        }
+    }
+}
+
+// Parameter CompetitionDetailScreen
+viewModel: CompetitionDetailViewModel = viewModel(factory = CompetitionDetailViewModel.factory(competitionId)),
+```
+
+ViewModel disimpan per entri back stack, sehingga tetap sama saat layar diputar. Argumen route ikut dipulihkan bila proses aplikasi dihentikan sistem.
+
+4. Tab aktif di layar detail adalah state layar, bukan argumen route, karena perpindahan tab terjadi di dalam layar: setelah Buat bracket berhasil dan dari pintasan "Lihat bracket" (hal. 10). Usulan route `?tab=` di hal. 2 tidak dipakai.
+5. Navigasi maju hanya dijalankan bila layar asal masih `RESUMED`, agar ketukan ganda selama animasi tidak membuka layar dua kali. Kembali memakai `navigateUp()`.
+6. Route baru ditambahkan ke `AppRoute`, lalu dipetakan di `AppRouting`. Keduanya file bersama, jadi diskusikan dulu dengan tim.
 
 ---
 
@@ -848,6 +933,7 @@ Laporan HTML ada di `app/build/reports/tests/testDebugUnitTest/index.html`.
 | `data/rule/BracketSimulator.kt`* | Port `BracketPlanner` dan alur submit/undo `MatchService` backend. Aturan bracket di aplikasi dibandingkan dengan simulasi ini untuk 2–16 peserta. Perbarui bila logika backend berubah |
 | `data/network/SafeApiCallTest.kt` | Pemetaan exception ke `AppError` |
 | `data/repository/*Test.kt` | Repository dengan fake service dari `FakeApiServices.kt` |
+| `ui/shared/*Test.kt` | Pemetaan error ke pesan (hal. 15) dan format tanggal |
 
 Pola test:
 
@@ -862,6 +948,7 @@ Pola test:
 | Gejala | Penyebab dan solusi |
 |---|---|
 | `Unresolved reference` ke kelas Participant atau Match setelah membuka komentar | Masih ada bagian modul yang dikomentari. Periksa daftar lokasi di [README bagian 5](README.md#5-status-modul-dan-cara-mengaktifkan) |
+| Build gagal di `ui/shared/ErrorMessage.kt` dengan pesan `'when' expression must be exhaustive` setelah membuka komentar | Kode error modul Anda di `AppError.kt` belum memiliki pesan. Tambahkan cabangnya ([bagian 6](#6-penanganan-error)) |
 | Request mendapat 404 padahal endpoint benar | Path di `…ApiService` diawali `/` sehingga prefix `/develop/` hilang. Tulis path relatif |
 | Hasil `AppError.InvalidResponse` | Respons tidak cocok dengan DTO, misalnya status baru dari backend. Bandingkan DTO dengan kontrak API backend |
 | Hasil `AppError.Network` di emulator | Emulator tidak terhubung ke internet. Buka `https://api.vispro.satryo.pro/develop/system/status` di browser emulator |

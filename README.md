@@ -96,9 +96,9 @@ MiniAppCompetition/
     │   ├── AndroidManifest.xml
     │   ├── res/values/strings.xml          # Seluruh teks yang tampil ke pengguna
     │   └── java/ac/sfj/miniappcompetition/
-    │       ├── MainActivity.kt              # Masih template awal; akan memanggil routing
+    │       ├── MainActivity.kt              # Memasang theme, lalu memanggil routing
     │       ├── MiniCompetitionApplication.kt  # Membuat ApiClient dan ketiga container
-    │       ├── routing/                     # NavHost dan route (belum dibuat)
+    │       ├── routing/                     # AppRoute (daftar route) dan AppRouting (NavHost)
     │       ├── data/
     │       │   ├── model/        # Competition, Participant, Match, AppResult, AppError
     │       │   ├── rule/         # CompetitionRules, ParticipantRules, BracketShape, BracketTopology, ...
@@ -115,13 +115,14 @@ MiniAppCompetition/
     │           │   ├── molecule/    # StatusLabel, AppListItem, ScoreStepper, InfoBanner, ...
     │           │   ├── organism/    # AppTopBar, FormBottomSheet, ConfirmationDialog, EmptyState, ...
     │           │   └── template/    # ListScreenTemplate, DetailTabsTemplate
-    │           ├── shared/       # Helper UI lintas fitur (belum ada isinya)
+    │           ├── shared/       # Helper UI lintas fitur: pesan error, label status, format tanggal
     │           └── feature/
     │               ├── competition/ {view, viewmodel}
     │               ├── participant/ {view, viewmodel}
     │               └── match/       {view, viewmodel}
     └── test/java/ac/sfj/miniappcompetition/
-        └── data/{rule, network, repository}   # Unit test data layer
+        ├── data/{rule, network, repository}   # Unit test data layer
+        └── ui/shared/                         # Unit test pemetaan error dan format tanggal
 ```
 
 Folder yang masih kosong berisi `.gitkeep` agar tetap ter-commit. Hapus `.gitkeep` setelah folder berisi file Kotlin.
@@ -148,11 +149,11 @@ Folder yang masih kosong berisi `.gitkeep` agar tetap ter-commit. Hapus `.gitkee
 
 Aturan tambahan:
 
-1. **Komponen tidak mengenal data domain.** Komponen di `ui/component` hanya menerima teks, angka, enum tampilan, dan ikon. Layar fitur yang memetakan model (mis. `Competition.status`) ke parameter komponen (mis. `StatusLabel(text, tone)`).
+1. **Komponen tidak mengenal data domain.** Komponen di `ui/component` hanya menerima teks, angka, enum tampilan, dan ikon. Pemetaan model (mis. `Competition.status`) ke parameter komponen (mis. `StatusLabel(text, tone)`) dilakukan di layar fitur, atau di `ui/shared` bila pemetaannya dipakai bersama (mis. `CompetitionStatusLabel`).
 2. **Teks untuk pengguna ada di `res/values/strings.xml`** dan diambil dengan `stringResource(...)`.
 3. **Ketersediaan tombol berasal dari `data/rule`.** Aksi yang tidak berlaku karena status kompetisi disembunyikan, bukan dinonaktifkan satu per satu (Referensi UI hal. 10). Aksi yang masih menunggu syarat lain, misalnya jumlah peserta untuk Buat bracket, dinonaktifkan dan disertai teks bantuan (hal. 9).
 4. **Setelah aksi match berhasil**, ViewModel memuat ulang detail kompetisi dengan `CompetitionRepository.refreshCompetition`, karena status kompetisi dapat berubah (Referensi UI hal. 2).
-5. **Pesan error dipetakan dari `AppError` dan `ApiErrorCode`**, bukan dari `message` backend yang bahasanya bercampur (Referensi UI hal. 15). Detail di [`HELP.md`](HELP.md#6-penanganan-error).
+5. **Pesan error dipetakan dari `AppError` dan `ApiErrorCode`** dengan `toErrorMessage()` di `ui/shared`, bukan dari `message` backend yang bahasanya bercampur (Referensi UI hal. 15). Detail di [`HELP.md`](HELP.md#6-penanganan-error).
 6. **File bersama** dipakai semua modul. Perubahan pada file berikut didiskusikan dulu dengan tim: `gradle/libs.versions.toml`, `app/build.gradle.kts`, `AndroidManifest.xml`, `MiniCompetitionApplication.kt`, `data/model/AppError.kt`, `data/rule/CompetitionRules.kt`, `data/network/*`, `ui/theme/*`, `ui/component/*`, `ui/shared/*`, `routing/*`, dan `res/values/strings.xml`.
 
 ### Konvensi penamaan
@@ -179,7 +180,10 @@ Aturan tambahan:
 | Theme dan `ui/component` | Selesai, dipakai semua modul |
 | Data layer Competition | Aktif, termasuk unit test |
 | Data layer Participant dan Match | Dikomentari dengan `//` per baris |
-| `routing/`, `ui/shared/`, `ui/feature/*` | Belum dibuat (berisi `.gitkeep`) |
+| `routing/` dan `MainActivity` | Aktif: route Daftar kompetisi (layar awal) dan Detail kompetisi |
+| `ui/shared/` | Aktif untuk Competition dan bagian bersama; bagian Participant dan Match ditambahkan pemilik modul |
+| `ui/feature/competition/view` | Kerangka layar daftar dan detail; isinya dibuat pada tahap layar Competition |
+| `ui/feature/competition/viewmodel`, `ui/feature/participant/*`, `ui/feature/match/*` | Belum dibuat (berisi `.gitkeep`) |
 
 ### Cara membuka komentar
 
@@ -188,7 +192,7 @@ Kode dikomentari dengan `//` di kolom pertama, sama dengan hasil **Comment with 
 - **File yang dikomentari penuh**: buka file, tekan `Ctrl+A`, lalu `Ctrl+/` (macOS: `Cmd+A`, `Cmd+/`).
 - **Baris di file bersama**: blok hanya baris milik modul Anda, lalu tekan `Ctrl+/`.
 
-Buka seluruh bagian modul Anda sekaligus, karena bagian-bagian tersebut saling mereferensikan. Setelah itu jalankan build dan unit test.
+Buka seluruh bagian modul Anda sekaligus, karena bagian-bagian tersebut saling mereferensikan. Setelah kode error modul Anda dibuka di `AppError.kt`, build gagal di `ui/shared/ErrorMessage.kt` sampai pesan untuk kode tersebut ditambahkan (baris **Ditambahkan sendiri** di bawah). Setelah itu jalankan build dan unit test.
 
 ### Modul Participant
 
@@ -197,6 +201,7 @@ Buka seluruh bagian modul Anda sekaligus, karena bagian-bagian tersebut saling m
 | File penuh | `data/model/Participant.kt`, `data/rule/ParticipantRules.kt`, `data/dto/ParticipantDto.kt`, `data/service/ParticipantApiService.kt`, `data/repository/ParticipantRepository.kt`, `data/container/ParticipantContainer.kt` |
 | Baris di file bersama | `data/model/AppError.kt`: `MEMBERS_NOT_ALLOWED`, `PARTICIPANT_NOT_FOUND`, `DUPLICATE_PARTICIPANT_NAME`<br>`data/rule/CompetitionRules.kt`: `canManageParticipants`<br>`MiniCompetitionApplication.kt`: import, properti, dan pembuatan `participantContainer` |
 | Test | File penuh `ParticipantRulesTest.kt` dan `NetworkParticipantRepositoryTest.kt`; di `FakeApiServices.kt`: import participant, `participantDto`, `FakeParticipantApiService`; di `CompetitionRulesTest.kt`: assertion `canManageParticipants` |
+| Ditambahkan sendiri | `ui/shared/ErrorMessage.kt`: pesan untuk `MEMBERS_NOT_ALLOWED`, `PARTICIPANT_NOT_FOUND`, dan `DUPLICATE_PARTICIPANT_NAME`, teksnya di `strings.xml` ([HELP bagian 5 dan 6](HELP.md#5-shared-ui-uishared)) |
 
 ### Modul Match
 
@@ -205,6 +210,7 @@ Buka seluruh bagian modul Anda sekaligus, karena bagian-bagian tersebut saling m
 | File penuh | `data/model/Match.kt`, `data/rule/RoundName.kt`, `data/rule/BracketShape.kt`, `data/rule/BracketTopology.kt`, `data/rule/MatchResultRules.kt`, `data/dto/MatchDto.kt`, `data/service/MatchApiService.kt`, `data/repository/MatchRepository.kt`, `data/container/MatchContainer.kt` |
 | Baris di file bersama | `data/model/AppError.kt`: `INVALID_WINNER`, `MATCH_NOT_FOUND`, `COMPETITION_NOT_IN_MATCH`, `INVALID_PARTICIPANT_COUNT`, `MATCH_NOT_READY`, `MATCH_UNDO_NOT_ALLOWED`<br>`data/rule/CompetitionRules.kt`: `canGenerateBracket`, `canResetBracket`<br>`MiniCompetitionApplication.kt`: import, properti, dan pembuatan `matchContainer` |
 | Test | File penuh `BracketSimulator.kt`, `BracketShapeTest.kt`, `BracketTopologyTest.kt`, `MatchResultRulesTest.kt`, `NetworkMatchRepositoryTest.kt`; di `FakeApiServices.kt`: import match, `matchDto`, `FakeMatchApiService`; di `CompetitionRulesTest.kt`: import `IN_MATCH` dan `COMPLETED`, test `generateBracket_…` dan `resetBracket_…` |
+| Ditambahkan sendiri | `ui/shared/ErrorMessage.kt`: pesan untuk keenam kode error Match di atas; `ui/shared/MatchDisplay.kt`: label status match, nama babak, dan asal slot kosong; teksnya di `strings.xml` ([HELP bagian 5 dan 6](HELP.md#5-shared-ui-uishared)) |
 
 ### Ketergantungan antarmodul
 

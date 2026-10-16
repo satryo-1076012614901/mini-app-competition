@@ -13,4 +13,26 @@
     <string name="cd_score_decrease">Kurangi skor %1$s</string>
     <string name="cd_score_increase">Tambah skor %1$s</string>
     <string name="cd_score_empty">Belum ada skor</string>
+
+    <!-- ui/shared: status kompetisi (Referensi UI hal. 7) -->
+    <string name="competition_status_open">Pendaftaran</string>
+    <string name="competition_status_in_match">Berlangsung</string>
+    <string name="competition_status_completed">Selesai</string>
+
+    <!-- ui/shared: jenis peserta (hal. 6–7) -->
+    <string name="participant_type_individual">Individu</string>
+    <string name="participant_type_team">Tim</string>
+    <string name="participant_type_locked">Terkunci karena kompetisi sudah memiliki peserta</string>
+
+    <!-- ui/shared: pesan error (hal. 15) -->
+    <string name="error_validation">Periksa kembali isian yang ditandai.</string>
+    <string name="error_not_found">Data tidak ditemukan, mungkin sudah dihapus.</string>
+    <string name="error_competition_not_open">Kompetisi sudah berjalan. Data dimuat ulang.</string>
+    <string name="error_data_conflict">Data bentrok dengan perubahan lain. Data dimuat ulang.</string>
+    <string name="error_request_failed">Permintaan tidak dapat diproses.</string>
+    <string name="error_server">Terjadi kendala di server.</string>
+    <string name="error_network">Tidak dapat terhubung ke server. Periksa koneksi.</string>
+
+    <!-- Layar Competition (hal. 7–8) -->
+    <string name="competition_list_title">Kompetisi</string>
 </resources>
