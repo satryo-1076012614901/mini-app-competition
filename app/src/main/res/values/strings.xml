@@ -9,6 +9,11 @@
     <string name="action_retry">Coba lagi</string>
     <string name="state_loading">Memuat</string>
 
+    <!-- Aksi umum -->
+    <string name="action_save">Simpan</string>
+    <string name="action_edit">Ubah</string>
+    <string name="action_delete">Hapus</string>
+
     <!-- Aksesibilitas (TalkBack) -->
     <string name="cd_score_decrease">Kurangi skor %1$s</string>
     <string name="cd_score_increase">Tambah skor %1$s</string>
@@ -33,6 +38,32 @@
     <string name="error_server">Terjadi kendala di server.</string>
     <string name="error_network">Tidak dapat terhubung ke server. Periksa koneksi.</string>
 
-    <!-- Layar Competition (hal. 7–8) -->
+    <!-- Layar Competition: daftar (hal. 7–8) -->
     <string name="competition_list_title">Kompetisi</string>
+    <string name="competition_filter_all">Semua</string>
+    <string name="competition_filter_empty">Belum ada kompetisi berstatus %1$s.</string>
+    <string name="competition_item_supporting">%1$s, dibuat %2$s</string>
+    <string name="competition_create">Buat kompetisi</string>
+    <string name="competition_empty_title">Buat kompetisi pertama</string>
+    <string name="competition_empty_message">Kompetisi menampung peserta, bracket, dan hasil pertandingan dalam satu tempat.</string>
+    <string name="competition_list_load_failed">Daftar kompetisi tidak dapat dimuat. Periksa koneksi, lalu coba lagi.</string>
+    <string name="competition_deleted">Kompetisi dihapus</string>
+
+    <!-- Layar Competition: form buat dan ubah (hal. 7) -->
+    <string name="competition_edit">Ubah kompetisi</string>
+    <string name="competition_name_label">Nama kompetisi</string>
+    <string name="competition_name_required">Wajib diisi</string>
+    <string name="competition_name_too_long">Maksimal %1$d karakter</string>
+    <string name="participant_type_label">Jenis peserta</string>
+    <string name="competition_updated">Kompetisi diperbarui</string>
+
+    <!-- Layar Competition: detail dan hapus (hal. 7–8) -->
+    <string name="competition_tab_participants">Peserta</string>
+    <string name="competition_tab_bracket">Bracket</string>
+    <string name="competition_delete_title">Hapus kompetisi?</string>
+    <string name="competition_delete_message">%1$s beserta seluruh pesertanya akan dihapus permanen.</string>
+
+    <!-- Placeholder sementara; hapus saat tab dari modul Participant dan Match dipasang -->
+    <string name="competition_tab_participants_placeholder">Daftar peserta dan tombol Buat bracket dikerjakan pada modul Participant.</string>
+    <string name="competition_tab_bracket_placeholder">Bracket, input hasil, dan urungkan hasil dikerjakan pada modul Match.</string>
 </resources>

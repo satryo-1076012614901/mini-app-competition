@@ -216,63 +216,42 @@ override suspend fun refreshCompetition(competitionId: Long): AppResult<Competit
 Pola yang dipakai:
 
 - **Satu ViewModel per layar** di `ui/feature/<fitur>/viewmodel`. State layar diekspos sebagai `StateFlow<…UiState>`; View hanya membaca state dan memanggil fungsi ViewModel.
-- **UiState** adalah `data class` yang berisi data dari repository serta state proses (memuat, menyimpan, error).
-- **Factory** berada di `companion object` dan mengambil repository dari container di `MiniCompetitionApplication`.
-- ViewModel tidak memakai Composable, komponen UI, atau `Context`.
+- **UiState** adalah `data class` yang berisi data dari repository serta state proses: memuat, menyimpan, error, serta sheet atau dialog yang sedang terbuka.
+- State disimpan di `MutableStateFlow` milik ViewModel. Data repository dikumpulkan di `init` lalu digabung ke state dengan `update { it.copy(...) }`; hasil aksi juga ditulis dengan `update`.
+- **Factory** berada di `companion object` dan mengambil repository dari container di `MiniCompetitionApplication`. ViewModel yang membutuhkan argumen route, misalnya ID kompetisi, memakai fungsi `factory(id)` ([bagian 8](#8-routing)).
+- ViewModel tidak memakai Composable, komponen UI, `ui/shared`, atau `Context`. Pemetaan error ke teks dilakukan View.
 
-Contoh (ilustrasi) ViewModel daftar kompetisi:
+Implementasi lengkap ada di `ui/feature/competition/viewmodel`: `CompetitionListViewModel` (daftar, filter, buat) dan `CompetitionDetailViewModel` (detail, ubah, hapus). Ringkasan polanya:
 
 ```kotlin
-package ac.sfj.miniappcompetition.ui.feature.competition.viewmodel
-
-import ac.sfj.miniappcompetition.MiniCompetitionApplication
-import ac.sfj.miniappcompetition.data.model.AppError
-import ac.sfj.miniappcompetition.data.model.AppResult
-import ac.sfj.miniappcompetition.data.model.Competition
-import ac.sfj.miniappcompetition.data.repository.CompetitionRepository
-import androidx.lifecycle.ViewModel
-import androidx.lifecycle.ViewModelProvider
-import androidx.lifecycle.ViewModelProvider.AndroidViewModelFactory.Companion.APPLICATION_KEY
-import androidx.lifecycle.viewModelScope
-import androidx.lifecycle.viewmodel.initializer
-import androidx.lifecycle.viewmodel.viewModelFactory
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.SharingStarted
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.flow.stateIn
-import kotlinx.coroutines.launch
-
 data class CompetitionListUiState(
     val competitions: List<Competition>? = null,   // null selama belum pernah dimuat
     val isRefreshing: Boolean = false,
     val loadError: AppError? = null,
+    val message: CompetitionMessage? = null,       // snackbar sekali tampil
 )
 
 class CompetitionListViewModel(
     private val competitionRepository: CompetitionRepository,
 ) : ViewModel() {
 
-    private val refreshing = MutableStateFlow(false)
-    private val loadError = MutableStateFlow<AppError?>(null)
-
-    val uiState: StateFlow<CompetitionListUiState> = combine(
-        competitionRepository.competitions,
-        refreshing,
-        loadError,
-    ) { competitions, isRefreshing, error ->
-        CompetitionListUiState(competitions, isRefreshing, error)
-    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), CompetitionListUiState())
+    private val _uiState = MutableStateFlow(CompetitionListUiState())
+    val uiState: StateFlow<CompetitionListUiState> = _uiState.asStateFlow()
 
     init {
+        viewModelScope.launch {
+            competitionRepository.competitions.collect { competitions ->
+                _uiState.update { it.copy(competitions = competitions) }
+            }
+        }
         refresh()
     }
 
     fun refresh() {
+        _uiState.update { it.copy(isRefreshing = true, loadError = null) }
         viewModelScope.launch {
-            refreshing.value = true
-            loadError.value = (competitionRepository.refreshCompetitions() as? AppResult.Failure)?.error
-            refreshing.value = false
+            val error = (competitionRepository.refreshCompetitions() as? AppResult.Failure)?.error
+            _uiState.update { it.copy(isRefreshing = false, loadError = error) }
         }
     }
 
@@ -290,23 +269,24 @@ class CompetitionListViewModel(
 Di View, ambil ViewModel dengan factory dan baca state sesuai lifecycle:
 
 ```kotlin
-import androidx.compose.runtime.getValue
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.lifecycle.viewmodel.compose.viewModel
-
 @Composable
 fun CompetitionListScreen(
-    onOpenCompetition: (Long) -> Unit,
+    onOpenCompetition: (competitionId: Long) -> Unit,
+    modifier: Modifier = Modifier,
     viewModel: CompetitionListViewModel = viewModel(factory = CompetitionListViewModel.Factory),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
-    CompetitionListContent(uiState = uiState, onRefresh = viewModel::refresh, onOpenCompetition = onOpenCompetition)
+    CompetitionListContent(uiState = uiState, onRefresh = viewModel::refresh, /* … */)
 }
 ```
 
 Pisahkan `…Screen` (mengambil ViewModel) dari `…Content` (hanya menerima state dan callback), agar `…Content` dapat di-preview dengan data contoh tanpa ViewModel.
 
-**Pesan sekali tampil** (snackbar) disimpan di UiState, misalnya `val message: …? = null`. View menampilkannya di `LaunchedEffect(uiState.message)` dengan `SnackbarHostState`, lalu memanggil fungsi ViewModel seperti `onMessageShown()` untuk mengosongkannya.
+**Pesan sekali tampil** (snackbar) disimpan di UiState, misalnya `val message: CompetitionMessage? = null`. View menampilkannya dengan `SnackbarHostState` di `LaunchedEffect(message)`, lalu memanggil `onMessageShown()` untuk mengosongkannya. Contoh: `CompetitionMessageEffect.kt`.
+
+**Sheet dan dialog** juga berupa state. Misalnya `form: CompetitionFormState? = null` berarti sheet tertutup. Error simpan ditampilkan di dalam sheet, karena snackbar layar tertutup oleh sheet.
+
+**Navigasi setelah aksi** ditulis sebagai state, misalnya `createdCompetitionId` setelah Buat kompetisi berhasil. View menjalankan navigasi di `LaunchedEffect`, lalu memanggil fungsi ViewModel untuk mengosongkannya.
 
 **Aksi match** selalu diikuti pemuatan ulang detail kompetisi:
 
@@ -478,142 +458,20 @@ StatusLabel(text = "Bye", tone = StatusTone.Outline, dashed = true)
 
 Untuk status kompetisi, pakai `CompetitionStatusLabel(status)` dari `ui/shared` ([bagian 5](#5-shared-ui-uishared)) yang sudah menerapkan tiga baris pertama tabel ini.
 
-**Layar daftar** (hal. 7–8): memuat, gagal, kosong, dan berisi.
+**Layar Competition sebagai acuan** (hal. 7–8). Layar daftar, form, dan detail sudah dibuat; pakai sebagai contoh pemakaian template dan komponen:
 
-```kotlin
-ListScreenTemplate(
-    title = "Kompetisi",
-    snackbarHostState = snackbarHostState,
-    isRefreshing = uiState.isRefreshing,
-    onRefresh = onRefresh,
-    filters = {
-        FilterChipRow(
-            options = listOf(
-                FilterOption(value = null, label = "Semua"),
-                FilterOption(value = CompetitionStatus.OPEN, label = "Pendaftaran"),
-                FilterOption(value = CompetitionStatus.IN_MATCH, label = "Berlangsung"),
-                FilterOption(value = CompetitionStatus.COMPLETED, label = "Selesai"),
-            ),
-            selected = uiState.statusFilter,                  // CompetitionStatus? di UiState
-            onSelect = onSelectFilter,
-        )
-    },
-    floatingActionButton = {
-        if (!uiState.competitions.isNullOrEmpty()) {          // FAB disembunyikan saat empty state
-            ExtendedFloatingActionButton(
-                text = { Text("Buat kompetisi") },
-                icon = { Icon(imageVector = AppIcons.Add, contentDescription = null) },
-                onClick = onCreate,
-            )
-        }
-    },
-) { contentPadding ->
-    val competitions = uiState.competitions
-    when {
-        competitions == null && uiState.loadError == null -> LoadingPlaceholder()
-        competitions == null -> ErrorState(
-            message = "Daftar kompetisi tidak dapat dimuat. Periksa koneksi, lalu coba lagi.",
-            onRetry = onRefresh,
-        )
-        competitions.isEmpty() -> EmptyState(
-            title = "Buat kompetisi pertama",
-            message = "Kompetisi menampung peserta, bracket, dan hasil pertandingan dalam satu tempat.",
-            icon = AppIcons.Trophy,
-            actionLabel = "Buat kompetisi",
-            actionIcon = AppIcons.Add,
-            onAction = onCreate,
-        )
-        else -> LazyColumn(contentPadding = contentPadding) {
-            items(competitions, key = { it.id }) { competition ->
-                val type = stringResource(competition.participantType.labelRes)
-                AppListItem(
-                    headline = competition.name,
-                    supporting = "$type, dibuat ${formatDisplayDate(competition.createdAt)}",   // "Tim, dibuat 6 Okt 2026"
-                    leading = { AppAvatar(icon = competition.participantType.icon) },
-                    trailing = { CompetitionStatusLabel(competition.status) },
-                    onClick = { onOpenCompetition(competition.id) },
-                )
-            }
-        }
-    }
-}
-```
+| File (`ui/feature/competition/view`) | Isi | Komponen |
+|---|---|---|
+| `CompetitionListScreen.kt` | State memuat, gagal, kosong, kosong karena filter, dan berisi; filter status; FAB | `ListScreenTemplate`, `FilterChipRow`, `AppListItem`, `LoadingPlaceholder`, `ErrorState`, `EmptyState` |
+| `CompetitionFormSheet.kt` | Sheet Buat dan Ubah kompetisi: validasi nama, kunci jenis peserta, error simpan di dalam sheet | `FormBottomSheet`, `AppTextField`, `SegmentedSelector`, `HintText` |
+| `CompetitionDetailScreen.kt` | Header status, menu Ubah dan Hapus sesuai aturan status, tab, dialog hapus | `DetailTabsTemplate`, `OverflowMenu`, `ConfirmationDialog`, `EmptyState` |
+| `CompetitionMessageEffect.kt` | Snackbar sekali tampil dengan aksi Coba lagi | `SnackbarHostState` |
 
-**Layar detail dengan tab** (hal. 2 dan 8): menu disusun dari aturan status, sehingga aksi yang tidak berlaku tidak tampil.
+Hal yang perlu ditiru:
 
-```kotlin
-DetailTabsTemplate(
-    title = competition.name,
-    tabs = listOf("Peserta", "Bracket"),
-    selectedTabIndex = selectedTab,
-    onSelectTab = onSelectTab,
-    onNavigateBack = onNavigateBack,
-    snackbarHostState = snackbarHostState,
-    actions = {
-        OverflowMenu(
-            actions = buildList {
-                if (CompetitionRules.canEdit(competition.status)) add(MenuAction(label = "Ubah", onClick = onEdit))
-                if (CompetitionRules.canDelete(competition.status)) {
-                    add(MenuAction(label = "Hapus", onClick = onDelete, destructive = true))
-                }
-            },
-        )
-    },
-    header = {
-        Row(
-            modifier = Modifier.padding(horizontal = Dimens.ScreenPadding, vertical = Dimens.SpaceSm),
-            horizontalArrangement = Arrangement.spacedBy(Dimens.SpaceSm),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            CompetitionStatusLabel(competition.status)
-            Text(
-                text = stringResource(competition.participantType.labelRes),
-                style = MaterialTheme.typography.bodyMedium,
-            )
-        }
-    },
-) { contentPadding ->
-    when (selectedTab) {
-        0 -> { /* konten tab Peserta: modul Participant */ }
-        else -> { /* konten tab Bracket: modul Match */ }
-    }
-}
-```
-
-**Form singkat** (hal. 7): `FormBottomSheet` untuk buat dan ubah kompetisi.
-
-```kotlin
-FormBottomSheet(
-    title = "Ubah kompetisi",
-    confirmLabel = "Simpan",
-    onConfirm = onSave,
-    onDismiss = onDismiss,
-    confirmLoading = form.isSaving,
-) {
-    AppTextField(
-        value = form.name,
-        onValueChange = onNameChange,
-        label = "Nama kompetisi",
-        modifier = Modifier.fillMaxWidth(),
-        supportingText = "Wajib diisi",
-        errorText = form.nameErrorText,                       // String? dari NameError
-        maxLength = CompetitionRules.NAME_MAX_LENGTH,
-    )
-    Spacer(Modifier.height(Dimens.SpaceLg))
-    SegmentedSelector(
-        options = listOf(
-            SegmentOption(value = ParticipantType.INDIVIDUAL, label = "Individu"),
-            SegmentOption(value = ParticipantType.TEAM, label = "Tim"),
-        ),
-        selected = form.participantType,                      // null pada mode buat
-        onSelect = onParticipantTypeChange,
-        enabled = !form.participantTypeLocked,
-    )
-    if (form.participantTypeLocked) {
-        HintText(text = "Terkunci karena kompetisi sudah memiliki peserta", icon = AppIcons.Lock)
-    }
-}
-```
+- Pesan kosong tetap dibungkus `LazyColumn` dengan item `fillParentMaxSize()`, agar pull-to-refresh tetap dapat ditarik.
+- Konten template bukan `BoxScope`. Untuk menengahkan `ErrorState`, bungkus dengan `Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center)`.
+- Menu disusun dari aturan status (`canEdit`, `canDelete`), sehingga aksi yang tidak berlaku tidak tampil.
 
 **Form panjang** (hal. 9): `FullScreenFormDialog` untuk peserta dengan anggota dinamis.
 
@@ -834,7 +692,7 @@ if (error != null) {
 ```
 
 - Gagal memuat saat belum ada data ditampilkan dengan `ErrorState`, memakai teks layar tersebut bila Referensi UI menyediakannya (hal. 8 untuk daftar kompetisi).
-- Aksi Coba lagi menjalankan ulang operasi yang gagal. Untuk aksi yang membuat data baru, misalnya Buat kompetisi, timeout dapat terjadi setelah data tersimpan di server. Muat ulang data sebelum mengirim ulang agar tidak terbentuk data ganda.
+- Aksi Coba lagi hanya ditawarkan untuk pemuatan data, misalnya `CompetitionMessage.Failure(error, canRetry = true)`. Aksi yang mengubah data tidak diulang dari snackbar. Timeout pada aksi yang membuat data baru, misalnya Buat kompetisi, dapat terjadi setelah data tersimpan di server, sehingga mengirim ulang dapat membuat data ganda.
 - Kode error modul Participant dan Match dipetakan dengan menambah cabang `when` di `ErrorMessage.kt`, bukan cabang `else`, beserta teksnya di `strings.xml` dengan awalan `error_`. Kode `PARTICIPANT_NOT_FOUND` dan `MATCH_NOT_FOUND` memakai `R.string.error_not_found` yang sudah ada.
 
 ---
@@ -884,6 +742,7 @@ composable<AppRoute.CompetitionDetail> { entry ->
     CompetitionDetailScreen(
         competitionId = route.competitionId,
         onNavigateBack = { navController.navigateUp() },
+        onExit = { exit -> /* lihat aturan 7 */ },
     )
 }
 ```
@@ -915,6 +774,38 @@ ViewModel disimpan per entri back stack, sehingga tetap sama saat layar diputar.
 4. Tab aktif di layar detail adalah state layar, bukan argumen route, karena perpindahan tab terjadi di dalam layar: setelah Buat bracket berhasil dan dari pintasan "Lihat bracket" (hal. 10). Usulan route `?tab=` di hal. 2 tidak dipakai.
 5. Navigasi maju hanya dijalankan bila layar asal masih `RESUMED`, agar ketukan ganda selama animasi tidak membuka layar dua kali. Kembali memakai `navigateUp()`.
 6. Route baru ditambahkan ke `AppRoute`, lalu dipetakan di `AppRouting`. Keduanya file bersama, jadi diskusikan dulu dengan tim.
+7. **Hasil dari layar detail.** Bila kompetisi dihapus atau ternyata sudah tidak ada (`COMPETITION_NOT_FOUND`), detail memanggil `onExit(CompetitionDetailExit)`. `AppRouting` menyimpan nilai tersebut di `SavedStateHandle` entri daftar, lalu kembali. Daftar menampilkan snackbar "Kompetisi dihapus" atau "Data tidak ditemukan, mungkin sudah dihapus." lalu mengosongkan nilainya.
+8. **Buat kompetisi berhasil** membuka detail kompetisi baru, karena langkah berikutnya adalah mendaftarkan peserta (keputusan tim; tidak diatur Referensi UI).
+
+### Menyambungkan tab Peserta dan Bracket
+
+Tab berada di `CompetitionDetailContent` (`ui/feature/competition/view/CompetitionDetailScreen.kt`). Saat ini kedua tab berisi `TabPlaceholder`. Pemilik modul membuat composable tab di folder modulnya sendiri, lalu mengganti placeholder pada cabang `when (uiState.selectedTab)`. Contoh tanda tangan untuk modul Participant:
+
+```kotlin
+// ui/feature/participant/view/ParticipantTab.kt
+@Composable
+fun ParticipantTab(
+    competition: Competition,                 // ID, status, dan jenis peserta dari layar detail
+    contentPadding: PaddingValues,            // inset bawah dari template
+    snackbarHostState: SnackbarHostState,     // snackbar milik layar detail
+    onShowBracket: () -> Unit,                // pintasan "Lihat bracket" dan setelah Buat bracket berhasil (hal. 10)
+    modifier: Modifier = Modifier,
+    viewModel: ParticipantTabViewModel = viewModel(factory = ParticipantTabViewModel.factory(competition.id)),
+)
+
+// CompetitionDetailScreen.kt, di dalam when (uiState.selectedTab)
+CompetitionDetailTab.Participants -> ParticipantTab(
+    competition = competition,
+    contentPadding = contentPadding,
+    snackbarHostState = snackbarHostState,
+    onShowBracket = { onSelectTab(CompetitionDetailTab.Bracket) },
+)
+```
+
+- ViewModel tab dibuat dengan `viewModel()` di dalam destinasi detail, sehingga tersimpan per entri back stack yang sama dengan `CompetitionDetailViewModel` dan tidak hilang saat berpindah tab.
+- Status kompetisi dibaca dari `competition.status` yang diberikan layar detail. Setelah aksi match, ViewModel tab memanggil `CompetitionRepository.refreshCompetition`; layar detail ikut menerima status terbaru dari cache repository.
+- Setelah tab dipasang, hapus `TabPlaceholder` yang tidak terpakai dan teks `competition_tab_*_placeholder` di `strings.xml`.
+- Menu Reset bracket (hal. 14) berada di menu layar detail milik modul Competition, sehingga cara penyambungannya disepakati bersama saat modul Match dibuat.
 
 ---
 
@@ -934,12 +825,13 @@ Laporan HTML ada di `app/build/reports/tests/testDebugUnitTest/index.html`.
 | `data/network/SafeApiCallTest.kt` | Pemetaan exception ke `AppError` |
 | `data/repository/*Test.kt` | Repository dengan fake service dari `FakeApiServices.kt` |
 | `ui/shared/*Test.kt` | Pemetaan error ke pesan (hal. 15) dan format tanggal |
+| `ui/feature/competition/viewmodel/*Test.kt` | ViewModel daftar dan detail kompetisi, serta state form |
 
 Pola test:
 
 - Fungsi suspend diuji dengan `runTest { }` dari `kotlinx-coroutines-test`.
 - Repository diuji dengan fake `…ApiService` yang menyimpan data di memori. Error backend dibuat dengan `apiError(status, code)`, dan error berikutnya diantrekan dengan `failNext(error)`.
-- ViewModel diuji dengan fake repository yang mengimplementasikan interface repository. Karena `viewModelScope` memakai `Dispatchers.Main`, panggil `Dispatchers.setMain(StandardTestDispatcher())` sebelum test dan `Dispatchers.resetMain()` sesudahnya.
+- ViewModel diuji dengan repository asli dan fake service, misalnya `NetworkCompetitionRepository(FakeCompetitionApiService())`, sehingga cache repository ikut teruji. Karena `viewModelScope` memakai `Dispatchers.Main`, panggil `Dispatchers.setMain(UnconfinedTestDispatcher())` di `@Before` dan `Dispatchers.resetMain()` di `@After`. Dengan dispatcher ini, coroutine ViewModel selesai sebelum assertion. Contoh: `CompetitionListViewModelTest`.
 
 ---
 

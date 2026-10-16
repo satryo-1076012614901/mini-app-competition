@@ -117,12 +117,13 @@ MiniAppCompetition/
     │           │   └── template/    # ListScreenTemplate, DetailTabsTemplate
     │           ├── shared/       # Helper UI lintas fitur: pesan error, label status, format tanggal
     │           └── feature/
-    │               ├── competition/ {view, viewmodel}
+    │               ├── competition/ {view, viewmodel}   # Daftar, form, hapus, dan detail kompetisi
     │               ├── participant/ {view, viewmodel}
     │               └── match/       {view, viewmodel}
     └── test/java/ac/sfj/miniappcompetition/
         ├── data/{rule, network, repository}   # Unit test data layer
-        └── ui/shared/                         # Unit test pemetaan error dan format tanggal
+        ├── ui/shared/                         # Unit test pemetaan error dan format tanggal
+        └── ui/feature/competition/viewmodel/  # Unit test ViewModel Competition
 ```
 
 Folder yang masih kosong berisi `.gitkeep` agar tetap ter-commit. Hapus `.gitkeep` setelah folder berisi file Kotlin.
@@ -182,8 +183,8 @@ Aturan tambahan:
 | Data layer Participant dan Match | Dikomentari dengan `//` per baris |
 | `routing/` dan `MainActivity` | Aktif: route Daftar kompetisi (layar awal) dan Detail kompetisi |
 | `ui/shared/` | Aktif untuk Competition dan bagian bersama; bagian Participant dan Match ditambahkan pemilik modul |
-| `ui/feature/competition/view` | Kerangka layar daftar dan detail; isinya dibuat pada tahap layar Competition |
-| `ui/feature/competition/viewmodel`, `ui/feature/participant/*`, `ui/feature/match/*` | Belum dibuat (berisi `.gitkeep`) |
+| `ui/feature/competition` | Aktif: daftar dengan filter status, buat, ubah, hapus, dan detail kompetisi, termasuk unit test ViewModel. Tab Peserta dan Bracket masih placeholder |
+| `ui/feature/participant/*`, `ui/feature/match/*` | Belum dibuat (berisi `.gitkeep`) |
 
 ### Cara membuka komentar
 
@@ -218,7 +219,8 @@ Beberapa layar memakai kode modul lain, sehingga urutan pengerjaan perlu dikoord
 
 | Layar | Modul pemilik | Memakai dari modul lain |
 |---|---|---|
-| Form ubah kompetisi: jenis peserta terkunci bila sudah ada peserta (hal. 7) | Competition | Jumlah peserta dari `ParticipantRepository`. Sebelum modul Participant aktif, backend tetap menolak perubahan dengan `PARTICIPANT_TYPE_LOCKED`. |
+| Form ubah kompetisi: jenis peserta terkunci bila sudah ada peserta (hal. 7) | Competition | Jumlah peserta dari `ParticipantRepository`, diteruskan ke `CompetitionFormState.edit(competition, participantCount)` di `CompetitionDetailViewModel.openEditForm`. Sebelum modul Participant aktif, kunci baru diterapkan setelah backend menolak perubahan dengan `PARTICIPANT_TYPE_LOCKED`. |
+| Tab Peserta dan tab Bracket (hal. 2) | Participant, Match | Placeholder di `CompetitionDetailScreen` milik modul Competition. Cara menggantinya ada di [HELP bagian 8](HELP.md#menyambungkan-tab-peserta-dan-bracket) |
 | Tab Peserta: ringkasan bracket dan tombol Buat bracket (hal. 9–10) | Participant | `BracketShape`, `CompetitionRules.canGenerateBracket`, dan `MatchRepository.generateBracket` dari modul Match |
 | Kartu match: nama peserta (hal. 11) | Match | `ParticipantRepository`, karena `MatchResponse` hanya berisi ID peserta |
 | Setiap aksi match (hal. 2) | Match | `CompetitionRepository.refreshCompetition` dari modul Competition |
