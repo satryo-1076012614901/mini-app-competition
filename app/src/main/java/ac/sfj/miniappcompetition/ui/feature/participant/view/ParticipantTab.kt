@@ -175,7 +175,7 @@ fun ParticipantTab(
             }
         }
 
-        if (canManage) {
+        if (canManage && participants != null) {
             BottomActionBar(
                 primary = BarAction(
                     label = if (participantType == ParticipantType.TEAM) {
@@ -205,14 +205,28 @@ fun ParticipantTab(
     }
 
     uiState.participantToDelete?.let { participant ->
+        val deleteErrorMessage = uiState.actionError?.let { error ->
+            stringResource(error.toErrorMessage().textRes)
+        }
+
         ConfirmationDialog(
             title = if (participantType == ParticipantType.TEAM) {
                 "Hapus tim?"
             } else {
                 "Hapus peserta?"
             },
-            text = "\"${participant.name}\" akan dihapus permanen dari kompetisi ini.",
-            confirmLabel = "Hapus",
+            text = if (deleteErrorMessage != null) {
+                "\"${participant.name}\" belum dapat dihapus.\n\n" +
+                        "$deleteErrorMessage\n\n" +
+                        "Coba lagi atau tutup dialog."
+            } else {
+                "\"${participant.name}\" akan dihapus permanen dari kompetisi ini."
+            },
+            confirmLabel = if (deleteErrorMessage != null) {
+                "Coba lagi"
+            } else {
+                "Hapus"
+            },
             onConfirm = viewModel::confirmDelete,
             onDismiss = viewModel::dismissDeleteDialog,
             icon = AppIcons.Delete,

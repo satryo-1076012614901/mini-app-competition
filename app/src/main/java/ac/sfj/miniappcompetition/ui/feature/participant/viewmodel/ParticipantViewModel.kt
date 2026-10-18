@@ -240,7 +240,10 @@ class ParticipantViewModel(
             if (state.isDeleting) {
                 state
             } else {
-                state.copy(participantToDelete = null)
+                state.copy(
+                    participantToDelete = null,
+                    actionError = null,
+                )
             }
         }
     }
