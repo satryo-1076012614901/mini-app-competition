@@ -205,7 +205,8 @@ class BracketViewModel(
                 }
                 is AppResult.Failure -> {
                     val stale = result.error.apiCode in setOf(ApiErrorCode.COMPETITION_NOT_OPEN,
-                        ApiErrorCode.COMPETITION_NOT_IN_MATCH, ApiErrorCode.MATCH_NOT_READY,
+                        ApiErrorCode.COMPETITION_NOT_IN_MATCH, ApiErrorCode.INVALID_PARTICIPANT_COUNT,
+                        ApiErrorCode.MATCH_NOT_READY,
                         ApiErrorCode.MATCH_UNDO_NOT_ALLOWED, ApiErrorCode.MATCH_NOT_FOUND,
                         ApiErrorCode.COMPETITION_NOT_FOUND, ApiErrorCode.DATA_INTEGRITY_VIOLATION)
                     state.update { old ->

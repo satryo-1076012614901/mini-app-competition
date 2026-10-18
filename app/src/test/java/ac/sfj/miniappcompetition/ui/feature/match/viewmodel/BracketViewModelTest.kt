@@ -210,4 +210,23 @@ class BracketViewModelTest {
         assertEquals(1, resets)
     }
 
+    @Test fun rejectedGeneration_refreshesChangedParticipantCount() = runTest {
+        competitions.competitions[0] = competitionDto(1)
+        matches.matches.clear()
+        val vm = create()
+        assertTrue(vm.uiState.value.canGenerate)
+        vm.requestGenerate()
+
+        // Another device removes a participant after the confirmation was opened.
+        participants.participants.removeLast()
+        matches.failNext(apiError(409, "INVALID_PARTICIPANT_COUNT"))
+        vm.confirm()
+
+        assertEquals(1, vm.uiState.value.participants!!.size)
+        assertFalse(vm.uiState.value.canGenerate)
+        assertNull(vm.uiState.value.confirmation)
+        assertEquals(ApiErrorCode.INVALID_PARTICIPANT_COUNT, vm.uiState.value.message?.error?.apiCode)
+        assertTrue(matches.submittedRequests.isEmpty())
+    }
+
 }

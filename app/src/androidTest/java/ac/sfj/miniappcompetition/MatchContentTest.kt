@@ -113,4 +113,22 @@ class MatchContentTest {
         compose.onNodeWithText("Simpan hasil").assertIsNotEnabled()
     }
 
+    @Test fun longChampionAndOpponentNames_keepFinalUndoReachableAtLargeFont() {
+        val longPeople = people.map { participant ->
+            participant.copy(name = "${participant.name} Fakultas Teknik Informatika Universitas Ciputra Surabaya ".repeat(4).take(255))
+        }
+        val final = nodes.last().copy(participant1Id = 1, participant2Id = 5, winnerId = 1,
+            score1 = 2, score2 = 1, status = MatchStatus.COMPLETED)
+        val old = state(3)
+        render(old.copy(competition = old.competition!!.copy(status = CompetitionStatus.COMPLETED),
+            participants = longPeople, matches = nodes.dropLast(1) + final), fontScale = 2f)
+
+        compose.onNodeWithText("Juara").assertIsDisplayed()
+        compose.onNodeWithTag("bracket-match-list").performScrollToNode(hasText("Urungkan"))
+        compose.onNodeWithText("Urungkan").assertIsDisplayed().assertIsEnabled()
+        screenshot("match-long-names-font200")
+        compose.onNodeWithTag("bracket-match-list").performScrollToIndex(1)
+        compose.onNodeWithText("Final").assertIsDisplayed().assertHasClickAction()
+    }
+
 }

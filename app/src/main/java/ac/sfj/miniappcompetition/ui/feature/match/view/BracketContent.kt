@@ -52,6 +52,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import java.time.Instant
@@ -88,23 +89,27 @@ fun BracketContent(
                     icon = AppIcons.AccountTree, actionLabel = stringResource(R.string.match_open_participants), onAction = onParticipants)
             }
             else -> {
-                if (state.competition.status == CompetitionStatus.COMPLETED && topology.championId != null) {
-                    ChampionCard(topology.finalMatch!!, state.participants)
-                }
                 val round = state.selectedRound?.coerceIn(1, topology.roundCount)
                     ?: topology.initialRound(state.competition.status) ?: 1
-                ScrollableTabs(
-                    tabs = (1..topology.roundCount).map { index ->
-                        val progress = topology.roundProgress(index)
-                        TabItem(topology.roundName(index).displayName(), "${progress.completed}/${progress.total}")
-                    }, selectedIndex = round - 1, onSelect = { onSelectRound(it + 1) },
-                )
                 LazyColumn(
-                    modifier = Modifier.weight(1f),
+                    modifier = Modifier.weight(1f).testTag("bracket-match-list"),
                     contentPadding = PaddingValues(start = Dimens.ScreenPadding, end = Dimens.ScreenPadding,
                         top = Dimens.SpaceLg, bottom = contentPadding.calculateBottomPadding() + Dimens.SpaceLg),
                     verticalArrangement = Arrangement.spacedBy(Dimens.SpaceMd),
                 ) {
+                    if (state.competition.status == CompetitionStatus.COMPLETED && topology.championId != null) {
+                        item(key = "champion") {
+                            ChampionCard(topology.finalMatch!!, state.participants)
+                        }
+                    }
+                    item(key = "round-tabs") {
+                        ScrollableTabs(
+                            tabs = (1..topology.roundCount).map { index ->
+                                val progress = topology.roundProgress(index)
+                                TabItem(topology.roundName(index).displayName(), "${progress.completed}/${progress.total}")
+                            }, selectedIndex = round - 1, onSelect = { onSelectRound(it + 1) },
+                        )
+                    }
                     items(topology.matchesInRound(round), key = { it.id }) { match ->
                         MatchCard(match, topology, state.participants, state.competition.status, state.canAct,
                             onInput = { onInput(match.id) }, onUndo = { onUndo(match.id) })
@@ -182,7 +187,7 @@ private fun MatchCard(
 private fun ChampionCard(final: Match, participants: List<Participant>?) {
     val winner = participantName(final.winnerId, participants)
     val loser = participantName(if (final.winnerId == final.participant1Id) final.participant2Id else final.participant1Id, participants)
-    Surface(Modifier.fillMaxWidth().padding(Dimens.SpaceLg), shape = MaterialTheme.shapes.medium,
+    Surface(Modifier.fillMaxWidth(), shape = MaterialTheme.shapes.medium,
         color = MaterialTheme.extendedColors.championContainer, contentColor = MaterialTheme.extendedColors.onChampionContainer) {
         Row(Modifier.padding(Dimens.SpaceLg), horizontalArrangement = Arrangement.spacedBy(Dimens.SpaceLg), verticalAlignment = Alignment.CenterVertically) {
             Icon(AppIcons.Trophy, null)
