@@ -19,8 +19,8 @@ object CompetitionRules {
     /** Hapus kompetisi: hanya saat Pendaftaran. Kompetisi Selesai harus diurungkan dan direset dahulu. */
     fun canDelete(status: CompetitionStatus): Boolean = status == CompetitionStatus.OPEN
 
-//    /** Tambah, ubah, dan hapus peserta: hanya saat Pendaftaran. */
-//    fun canManageParticipants(status: CompetitionStatus): Boolean = status == CompetitionStatus.OPEN
+    /** Tambah, ubah, dan hapus peserta: hanya saat Pendaftaran. */
+    fun canManageParticipants(status: CompetitionStatus): Boolean = status == CompetitionStatus.OPEN
 
 //    /** Buat bracket: saat Pendaftaran dengan 2–16 peserta (`INVALID_PARTICIPANT_COUNT`). */
 //    fun canGenerateBracket(status: CompetitionStatus, participantCount: Int): Boolean =

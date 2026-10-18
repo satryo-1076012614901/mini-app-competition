@@ -17,6 +17,7 @@ import ac.sfj.miniappcompetition.ui.feature.competition.viewmodel.CompetitionDet
 import ac.sfj.miniappcompetition.ui.feature.competition.viewmodel.CompetitionDetailTab
 import ac.sfj.miniappcompetition.ui.feature.competition.viewmodel.CompetitionDetailUiState
 import ac.sfj.miniappcompetition.ui.feature.competition.viewmodel.CompetitionDetailViewModel
+import ac.sfj.miniappcompetition.ui.feature.participant.view.ParticipantTab
 import ac.sfj.miniappcompetition.ui.shared.CompetitionStatusLabel
 import ac.sfj.miniappcompetition.ui.shared.labelRes
 import ac.sfj.miniappcompetition.ui.shared.toErrorMessage
@@ -160,10 +161,10 @@ internal fun CompetitionDetailContent(
 
             // Titik sambung tab: ganti placeholder dengan tab dari modul Participant dan Match.
             else -> when (uiState.selectedTab) {
-                CompetitionDetailTab.Participants -> TabPlaceholder(
-                    title = stringResource(R.string.competition_tab_participants),
-                    message = stringResource(R.string.competition_tab_participants_placeholder),
-                    icon = AppIcons.Groups,
+                CompetitionDetailTab.Participants -> ParticipantTab(
+                    competitionId = competition.id,
+                    participantType = competition.participantType,
+                    competitionStatus = competition.status,
                     contentPadding = contentPadding,
                 )
 
