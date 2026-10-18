@@ -11,10 +11,10 @@ Acuan tampilan adalah dokumen **Mini Competition Manager — Referensi UI Androi
 | Modul | Anggota | Layar (Referensi UI) | Status data layer |
 |---|---|---|---|
 | Competition | Satryo Nugroho | Halaman Kompetisi (hal. 7–8): daftar, detail, form, dan hapus kompetisi | Aktif |
-| Participant | Jessy Rosinta | Halaman Peserta (hal. 9–10): tab Peserta dan form peserta | Dikomentari, siap diaktifkan |
-| Match | Fariz | Halaman Match (hal. 11, 12, 14): tab Bracket, input dan urungkan hasil, reset bracket | Dikomentari, siap diaktifkan |
+| Participant | Jessy Rosinta | Halaman Peserta (hal. 9–10): tab Peserta dan form peserta | Aktif |
+| Match | Fariz | Halaman Match (hal. 11, 12, 14): tab Bracket, input dan urungkan hasil, reset bracket | Aktif |
 
-Data layer modul Participant dan Match disiapkan dalam bentuk kode yang dikomentari. Pemilik modul membuka komentarnya, menyesuaikan bila perlu, lalu meng-commit-nya sendiri. Caranya ada di [bagian 5](#5-status-modul-dan-cara-mengaktifkan).
+Data layer Participant dan Match sudah aktif. Tab Peserta dan Bracket terhubung ke detail kompetisi. Layar bracket penuh pada Referensi UI halaman 13 dikeluarkan dari scope Android dan akan memakai UI web; tautan web belum ditambahkan.
 
 ---
 
@@ -180,20 +180,15 @@ Aturan tambahan:
 |---|---|
 | Theme dan `ui/component` | Selesai, dipakai semua modul |
 | Data layer Competition | Aktif, termasuk unit test |
-| Data layer Participant dan Match | Dikomentari dengan `//` per baris |
+| Data layer Participant dan Match | Aktif |
 | `routing/` dan `MainActivity` | Aktif: route Daftar kompetisi (layar awal) dan Detail kompetisi |
 | `ui/shared/` | Aktif untuk Competition dan bagian bersama; bagian Participant dan Match ditambahkan pemilik modul |
-| `ui/feature/competition` | Aktif: daftar dengan filter status, buat, ubah, hapus, dan detail kompetisi, termasuk unit test ViewModel. Tab Peserta dan Bracket masih placeholder |
-| `ui/feature/participant/*`, `ui/feature/match/*` | Belum dibuat (berisi `.gitkeep`) |
+| `ui/feature/competition` | Aktif: daftar dengan filter status, buat, ubah, hapus, dan detail kompetisi, termasuk unit test ViewModel. Tab Peserta dan Bracket sudah terhubung |
+| `ui/feature/participant/*`, `ui/feature/match/*` | Aktif: CRUD peserta dan pengelolaan hasil per babak |
 
-### Cara membuka komentar
+### Peta aktivasi modul
 
-Kode dikomentari dengan `//` di kolom pertama, sama dengan hasil **Comment with Line Comment** di Android Studio.
-
-- **File yang dikomentari penuh**: buka file, tekan `Ctrl+A`, lalu `Ctrl+/` (macOS: `Cmd+A`, `Cmd+/`).
-- **Baris di file bersama**: blok hanya baris milik modul Anda, lalu tekan `Ctrl+/`.
-
-Buka seluruh bagian modul Anda sekaligus, karena bagian-bagian tersebut saling mereferensikan. Setelah kode error modul Anda dibuka di `AppError.kt`, build gagal di `ui/shared/ErrorMessage.kt` sampai pesan untuk kode tersebut ditambahkan (baris **Ditambahkan sendiri** di bawah). Setelah itu jalankan build dan unit test.
+Participant dan Match sudah diaktifkan, termasuk bagian bersama dan test. Tabel berikut menjadi peta lokasi kode; tidak perlu membuka komentar lagi.
 
 ### Modul Participant
 
@@ -220,7 +215,7 @@ Beberapa layar memakai kode modul lain, sehingga urutan pengerjaan perlu dikoord
 | Layar | Modul pemilik | Memakai dari modul lain |
 |---|---|---|
 | Form ubah kompetisi: jenis peserta terkunci bila sudah ada peserta (hal. 7) | Competition | Jumlah peserta dari `ParticipantRepository`, diteruskan ke `CompetitionFormState.edit(competition, participantCount)` di `CompetitionDetailViewModel.openEditForm`. Sebelum modul Participant aktif, kunci baru diterapkan setelah backend menolak perubahan dengan `PARTICIPANT_TYPE_LOCKED`. |
-| Tab Peserta dan tab Bracket (hal. 2) | Participant, Match | Placeholder di `CompetitionDetailScreen` milik modul Competition. Cara menggantinya ada di [HELP bagian 8](HELP.md#menyambungkan-tab-peserta-dan-bracket) |
+| Tab Peserta dan tab Bracket (hal. 2) | Participant, Match | Slot `participantContent` dan `bracketContent` di `CompetitionDetailScreen` milik modul Competition. Pola integrasi ada di [HELP bagian 8](HELP.md#menyambungkan-tab-peserta-dan-bracket) |
 | Tab Peserta: ringkasan bracket dan tombol Buat bracket (hal. 9–10) | Participant | `BracketShape`, `CompetitionRules.canGenerateBracket`, dan `MatchRepository.generateBracket` dari modul Match |
 | Kartu match: nama peserta (hal. 11) | Match | `ParticipantRepository`, karena `MatchResponse` hanya berisi ID peserta |
 | Setiap aksi match (hal. 2) | Match | `CompetitionRepository.refreshCompetition` dari modul Competition |
@@ -231,7 +226,7 @@ Beberapa layar memakai kode modul lain, sehingga urutan pengerjaan perlu dikoord
 ## 6. Langkah kerja
 
 1. Baca halaman Referensi UI untuk modul Anda, lalu [`HELP.md`](HELP.md).
-2. Aktifkan data layer modul Anda ([bagian 5](#5-status-modul-dan-cara-mengaktifkan)), lalu jalankan build dan unit test.
+2. Baca peta data layer modul Anda ([bagian 5](#5-status-modul-dan-cara-mengaktifkan)), lalu jalankan build dan unit test.
 3. Buat ViewModel di `ui/feature/<fitur>/viewmodel` dengan pola di [HELP.md bagian 3](HELP.md#3-viewmodel-dan-uistate).
 4. Buat layar di `ui/feature/<fitur>/view` memakai komponen dari `ui/component` ([HELP.md bagian 4](HELP.md#4-komponen-ui-atomic-design)).
 5. Tambahkan teks baru ke `res/values/strings.xml`.
@@ -257,3 +252,16 @@ Beberapa layar memakai kode modul lain, sehingga urutan pengerjaan perlu dikoord
 - Backend dan kontrak API: [`afl3-miniapp`](https://github.com/satryo-1076012614901/afl3-miniapp), terutama bagian *Kontrak API aplikasi* di `HELP.md` repositori tersebut.
 - Material Design 3 untuk Compose: <https://developer.android.com/develop/ui/compose/designsystems/material3>
 - Material Symbols: <https://fonts.google.com/icons>
+
+## Implementasi Match Android
+
+- `BracketViewModel` dibuat sekali di detail kompetisi dan dipakai kedua tab: generation dari Peserta, hasil/undo dari Bracket, reset dari menu detail.
+- Konten Bracket dan field hasil bersifat stateless. Preview mencakup terang, gelap, dan font 200%; tidak membuat ViewModel atau mengakses jaringan.
+- `MatchRepository.submitResult` dan `undoResult` menyimpan respons mutasi ke cache, lalu **pemanggil wajib memuat ulang seluruh bracket dan kompetisi**. ViewModel membedakan kegagalan mutasi dari kegagalan sinkronisasi. Tombol muat ulang hanya mengulang GET, bukan mutasi.
+- Setelah generation berhasil dan data tersinkron, buka Bracket. Setelah reset, buka Peserta. Setelah hasil final, pilih Final dan tampilkan juara.
+- Skor opsional; skor lengkap tidak seri menentukan pemenang otomatis. Skor kosong/parsial/seri membutuhkan pilihan manual. Mengubah skor menghapus pilihan manual sebelumnya.
+- Snackbar hasil menyediakan Urungkan tanpa dialog; aksi kartu memakai konfirmasi. Keduanya memeriksa kelayakan terbaru, termasuk alur bye.
+- Tidak ada Canvas pohon bracket, landscape route, zoom, atau pembuka web sementara.
+
+Verifikasi lokal: `sh ./gradlew :app:assembleDebug :app:testDebugUnitTest :app:lintDebug`.
+Test UI tanpa backend: `sh ./gradlew :app:connectedDebugAndroidTest -Pandroid.testInstrumentationRunnerArguments.class=ac.sfj.miniappcompetition.MatchContentTest` (perlu emulator).

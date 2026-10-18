@@ -1,5 +1,13 @@
 package ac.sfj.miniappcompetition.ui.feature.participant.view
 
+import ac.sfj.miniappcompetition.R
+import ac.sfj.miniappcompetition.data.rule.BracketShape
+import ac.sfj.miniappcompetition.ui.shared.bracketSummary
+import ac.sfj.miniappcompetition.ui.component.molecule.HintText
+import ac.sfj.miniappcompetition.ui.component.atom.AppButton
+import ac.sfj.miniappcompetition.ui.component.atom.AppButtonVariant
+import ac.sfj.miniappcompetition.ui.theme.Dimens
+import androidx.compose.material3.Text
 import ac.sfj.miniappcompetition.data.model.CompetitionStatus
 import ac.sfj.miniappcompetition.data.model.ParticipantType
 import ac.sfj.miniappcompetition.data.rule.CompetitionRules
@@ -39,6 +47,11 @@ fun ParticipantTab(
     competitionStatus: CompetitionStatus,
     contentPadding: PaddingValues,
     modifier: Modifier = Modifier,
+    onGenerateBracket: (() -> Unit)? = null,
+    onOpenBracket: (() -> Unit)? = null,
+    canGenerateBracket: Boolean = false,
+    matchBusy: Boolean = false,
+    matchHeader: @Composable () -> Unit = {},
     viewModel: ParticipantViewModel = viewModel(
         factory = ParticipantViewModel.factory(competitionId),
     ),
@@ -54,6 +67,21 @@ fun ParticipantTab(
     Column(
         modifier = modifier.fillMaxSize(),
     ) {
+        matchHeader()
+        participants?.let { loaded ->
+            Column(Modifier.padding(Dimens.ScreenPadding)) {
+                Text(stringResource(R.string.match_count, loaded.size))
+                if (canManage) {
+                    val shape = BracketShape.of(loaded.size)
+                    HintText(if (shape != null) bracketSummary(shape) else stringResource(R.string.match_minimum))
+                } else {
+                    HintText(stringResource(R.string.match_locked), icon = AppIcons.Lock)
+                    onOpenBracket?.let { open ->
+                        AppButton(stringResource(R.string.match_open_bracket), open, variant = AppButtonVariant.Text)
+                    }
+                }
+            }
+        }
         Box(
             modifier = Modifier
                 .weight(1f)
@@ -140,7 +168,7 @@ fun ParticipantTab(
                                         },
                                     )
                                 },
-                                trailing = if (canManage) {
+                                trailing = if (canManage && !matchBusy) {
                                     {
                                         OverflowMenu(
                                             actions = listOf(
@@ -176,18 +204,17 @@ fun ParticipantTab(
         }
 
         if (canManage && participants != null) {
+            val add = BarAction(
+                label = if (participantType == ParticipantType.TEAM) "Tambah tim" else "Tambah peserta",
+                onClick = { viewModel.openCreateForm(participantType) }, icon = AppIcons.Add,
+                enabled = !matchBusy,
+            )
             BottomActionBar(
-                primary = BarAction(
-                    label = if (participantType == ParticipantType.TEAM) {
-                        "Tambah tim"
-                    } else {
-                        "Tambah peserta"
-                    },
-                    onClick = {
-                        viewModel.openCreateForm(participantType)
-                    },
-                    icon = AppIcons.Add,
-                ),
+                primary = onGenerateBracket?.let { generate -> BarAction(
+                    stringResource(R.string.match_generate), generate,
+                    enabled = canGenerateBracket && uiState.form == null && uiState.participantToDelete == null,
+                ) } ?: add,
+                secondary = if (onGenerateBracket != null) add else null,
             )
         }
     }
