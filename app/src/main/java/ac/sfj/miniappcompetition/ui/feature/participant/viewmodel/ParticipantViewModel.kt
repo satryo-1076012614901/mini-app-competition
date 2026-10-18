@@ -25,6 +25,9 @@ data class ParticipantUiState(
     val isRefreshing: Boolean = false,
     val loadError: AppError? = null,
     val form: ParticipantFormState? = null,
+    val participantToDelete: Participant? = null,
+    val isDeleting: Boolean = false,
+    val actionError: AppError? = null,
 )
 
 class ParticipantViewModel(
@@ -64,7 +67,8 @@ class ParticipantViewModel(
         }
 
         viewModelScope.launch {
-            val result = participantRepository.refreshParticipants(competitionId)
+            val result =
+                participantRepository.refreshParticipants(competitionId)
 
             _uiState.update { state ->
                 when (result) {
@@ -85,6 +89,22 @@ class ParticipantViewModel(
         _uiState.update {
             it.copy(
                 form = ParticipantFormState.create(participantType),
+                actionError = null,
+            )
+        }
+    }
+
+    fun openEditForm(
+        participantType: ParticipantType,
+        participant: Participant,
+    ) {
+        _uiState.update {
+            it.copy(
+                form = ParticipantFormState.edit(
+                    participantType = participantType,
+                    participant = participant,
+                ),
+                actionError = null,
             )
         }
     }
@@ -167,14 +187,27 @@ class ParticipantViewModel(
         }
 
         viewModelScope.launch {
-            val result = participantRepository.createParticipant(
-                competitionId = competitionId,
-                name = ParticipantRules.normalizeName(form.name),
-                members = ParticipantRules.membersForRequest(
-                    participantType = form.participantType,
-                    members = form.members,
-                ),
+            val name = ParticipantRules.normalizeName(form.name)
+            val members = ParticipantRules.membersForRequest(
+                participantType = form.participantType,
+                members = form.members,
             )
+
+            val result =
+                if (form.participantId == null) {
+                    participantRepository.createParticipant(
+                        competitionId = competitionId,
+                        name = name,
+                        members = members,
+                    )
+                } else {
+                    participantRepository.updateParticipant(
+                        competitionId = competitionId,
+                        participantId = form.participantId,
+                        name = name,
+                        members = members,
+                    )
+                }
 
             _uiState.update { state ->
                 when (result) {
@@ -193,17 +226,79 @@ class ParticipantViewModel(
         }
     }
 
+    fun requestDelete(participant: Participant) {
+        _uiState.update {
+            it.copy(
+                participantToDelete = participant,
+                actionError = null,
+            )
+        }
+    }
+
+    fun dismissDeleteDialog() {
+        _uiState.update { state ->
+            if (state.isDeleting) {
+                state
+            } else {
+                state.copy(participantToDelete = null)
+            }
+        }
+    }
+
+    fun confirmDelete() {
+        val participant =
+            _uiState.value.participantToDelete ?: return
+
+        if (_uiState.value.isDeleting) return
+
+        _uiState.update {
+            it.copy(
+                isDeleting = true,
+                actionError = null,
+            )
+        }
+
+        viewModelScope.launch {
+            val result =
+                participantRepository.deleteParticipant(
+                    competitionId = competitionId,
+                    participantId = participant.id,
+                )
+
+            _uiState.update { state ->
+                when (result) {
+                    is AppResult.Success ->
+                        state.copy(
+                            participantToDelete = null,
+                            isDeleting = false,
+                        )
+
+                    is AppResult.Failure ->
+                        state.copy(
+                            isDeleting = false,
+                            actionError = result.error,
+                        )
+                }
+            }
+        }
+    }
+
     companion object {
-        fun factory(competitionId: Long): ViewModelProvider.Factory =
+        fun factory(
+            competitionId: Long,
+        ): ViewModelProvider.Factory =
             viewModelFactory {
                 initializer {
                     val application =
-                        this[APPLICATION_KEY] as MiniCompetitionApplication
+                        this[APPLICATION_KEY]
+                                as MiniCompetitionApplication
 
                     ParticipantViewModel(
                         competitionId = competitionId,
                         participantRepository =
-                            application.participantContainer.participantRepository,
+                            application
+                                .participantContainer
+                                .participantRepository,
                     )
                 }
             }

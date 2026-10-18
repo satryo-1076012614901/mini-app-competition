@@ -6,8 +6,11 @@ import ac.sfj.miniappcompetition.data.rule.CompetitionRules
 import ac.sfj.miniappcompetition.ui.component.atom.AppAvatar
 import ac.sfj.miniappcompetition.ui.component.foundation.AppIcons
 import ac.sfj.miniappcompetition.ui.component.molecule.AppListItem
+import ac.sfj.miniappcompetition.ui.component.molecule.MenuAction
+import ac.sfj.miniappcompetition.ui.component.molecule.OverflowMenu
 import ac.sfj.miniappcompetition.ui.component.organism.BarAction
 import ac.sfj.miniappcompetition.ui.component.organism.BottomActionBar
+import ac.sfj.miniappcompetition.ui.component.organism.ConfirmationDialog
 import ac.sfj.miniappcompetition.ui.component.organism.EmptyState
 import ac.sfj.miniappcompetition.ui.component.organism.ErrorState
 import ac.sfj.miniappcompetition.ui.component.organism.LoadingPlaceholder
@@ -137,6 +140,34 @@ fun ParticipantTab(
                                         },
                                     )
                                 },
+                                trailing = if (canManage) {
+                                    {
+                                        OverflowMenu(
+                                            actions = listOf(
+                                                MenuAction(
+                                                    label = "Ubah",
+                                                    onClick = {
+                                                        viewModel.openEditForm(
+                                                            participantType,
+                                                            participant,
+                                                        )
+                                                    },
+                                                ),
+                                                MenuAction(
+                                                    label = "Hapus",
+                                                    onClick = {
+                                                        viewModel.requestDelete(
+                                                            participant,
+                                                        )
+                                                    },
+                                                    destructive = true,
+                                                ),
+                                            ),
+                                        )
+                                    }
+                                } else {
+                                    null
+                                },
                             )
                         }
                     }
@@ -170,6 +201,23 @@ fun ParticipantTab(
             onRemoveMember = viewModel::removeMember,
             onSave = viewModel::submitForm,
             onDismiss = viewModel::closeForm,
+        )
+    }
+
+    uiState.participantToDelete?.let { participant ->
+        ConfirmationDialog(
+            title = if (participantType == ParticipantType.TEAM) {
+                "Hapus tim?"
+            } else {
+                "Hapus peserta?"
+            },
+            text = "\"${participant.name}\" akan dihapus permanen dari kompetisi ini.",
+            confirmLabel = "Hapus",
+            onConfirm = viewModel::confirmDelete,
+            onDismiss = viewModel::dismissDeleteDialog,
+            icon = AppIcons.Delete,
+            destructive = true,
+            confirmLoading = uiState.isDeleting,
         )
     }
 }

@@ -38,7 +38,11 @@ fun ParticipantFormDialog(
     val isTeam = form.participantType == ParticipantType.TEAM
 
     FullScreenFormDialog(
-        title = if (isTeam) "Tambah tim" else "Tambah peserta",
+        title = if (form.isEdit) {
+            if (isTeam) "Ubah tim" else "Ubah peserta"
+        } else {
+            if (isTeam) "Tambah tim" else "Tambah peserta"
+        },
         confirmLabel = "Simpan",
         onConfirm = onSave,
         onDismiss = onDismiss,
