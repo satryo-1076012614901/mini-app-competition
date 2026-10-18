@@ -37,6 +37,7 @@ fun AppError.toErrorMessage(): ErrorMessage = when (this) {
 private fun ApiErrorCode.toErrorMessage(): ErrorMessage = when (this) {
     ApiErrorCode.VALIDATION_ERROR -> ErrorMessage(R.string.error_validation)
     ApiErrorCode.COMPETITION_NOT_FOUND -> ErrorMessage(R.string.error_not_found)
+    ApiErrorCode.PARTICIPANT_NOT_FOUND -> ErrorMessage(R.string.error_not_found)
     ApiErrorCode.COMPETITION_NOT_OPEN -> ErrorMessage(R.string.error_competition_not_open)
     ApiErrorCode.PARTICIPANT_TYPE_LOCKED -> ErrorMessage(R.string.participant_type_locked)
     ApiErrorCode.DATA_INTEGRITY_VIOLATION -> ErrorMessage(R.string.error_data_conflict)
