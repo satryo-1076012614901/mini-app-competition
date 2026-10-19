@@ -847,3 +847,10 @@ Pola test:
 | Perubahan `libs.versions.toml` belum terbaca | Jalankan **Sync Project with Gradle Files** |
 | Preview gagal dirender | Build project dulu, lalu pastikan preview dibungkus `PreviewSurface` atau `MiniAppCompetitionTheme` |
 | Ingin melihat request dan response | Jalankan build debug, lalu cari baris `--> GET …` dan `<-- 200 …` di Logcat |
+
+
+### Match: sinkronisasi setelah mutasi
+
+Match sudah aktif. `MatchRepository.submitResult` dan `undoResult` memperbarui cache node respons tanpa GET tersembunyi. `BracketViewModel` kemudian memanggil `refreshMatches` dan `refreshCompetition` (serta refresh peserta) dan menampilkan kegagalan sinkronisasi secara terpisah. Jangan mengulangi POST ketika GET sesudahnya gagal. Selama sinkronisasi belum berhasil, aksi Match dikunci; Muat ulang hanya mengulang pembacaan.
+
+Detail menginjeksi `participantContent` dan `bracketContent`, sehingga preview detail tidak mengakses application container. Generation dan reset memakai ViewModel Match yang sama pada kedua tab. Tampilan bracket penuh halaman 13 menjadi scope web, tanpa route atau tombol sementara di Android.

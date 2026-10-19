@@ -35,6 +35,14 @@ fun AppError.toErrorMessage(): ErrorMessage = when (this) {
  * cabang `else`. Selama ada kode di [ApiErrorCode] yang belum dipetakan, build gagal di fungsi ini.
  */
 private fun ApiErrorCode.toErrorMessage(): ErrorMessage = when (this) {
+    ApiErrorCode.INVALID_WINNER -> ErrorMessage(R.string.match_error_winner)
+    ApiErrorCode.MEMBERS_NOT_ALLOWED -> ErrorMessage(R.string.participant_error_members)
+    ApiErrorCode.DUPLICATE_PARTICIPANT_NAME -> ErrorMessage(R.string.participant_error_duplicate)
+    ApiErrorCode.MATCH_NOT_FOUND -> ErrorMessage(R.string.error_not_found)
+    ApiErrorCode.COMPETITION_NOT_IN_MATCH -> ErrorMessage(R.string.match_error_not_active)
+    ApiErrorCode.INVALID_PARTICIPANT_COUNT -> ErrorMessage(R.string.match_minimum)
+    ApiErrorCode.MATCH_NOT_READY -> ErrorMessage(R.string.match_error_not_ready)
+    ApiErrorCode.MATCH_UNDO_NOT_ALLOWED -> ErrorMessage(R.string.match_error_undo)
     ApiErrorCode.VALIDATION_ERROR -> ErrorMessage(R.string.error_validation)
     ApiErrorCode.COMPETITION_NOT_FOUND -> ErrorMessage(R.string.error_not_found)
     ApiErrorCode.PARTICIPANT_NOT_FOUND -> ErrorMessage(R.string.error_not_found)

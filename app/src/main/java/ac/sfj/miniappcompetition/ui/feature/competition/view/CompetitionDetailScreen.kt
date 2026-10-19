@@ -1,5 +1,11 @@
 package ac.sfj.miniappcompetition.ui.feature.competition.view
 
+import ac.sfj.miniappcompetition.ui.feature.match.view.BracketContent
+import ac.sfj.miniappcompetition.ui.feature.match.view.MatchOverlays
+import ac.sfj.miniappcompetition.ui.feature.match.view.MatchSyncWarning
+import ac.sfj.miniappcompetition.ui.feature.match.viewmodel.BracketNavigation
+import ac.sfj.miniappcompetition.ui.feature.match.viewmodel.BracketViewModel
+import androidx.compose.material3.SnackbarResult
 import ac.sfj.miniappcompetition.R
 import ac.sfj.miniappcompetition.data.model.Competition
 import ac.sfj.miniappcompetition.data.model.CompetitionStatus
@@ -59,6 +65,9 @@ fun CompetitionDetailScreen(
     modifier: Modifier = Modifier,
     viewModel: CompetitionDetailViewModel = viewModel(factory = CompetitionDetailViewModel.factory(competitionId)),
 ) {
+    val matchViewModel: BracketViewModel = viewModel(
+        key = "bracket-$competitionId", factory = BracketViewModel.factory(competitionId))
+    val matchState by matchViewModel.uiState.collectAsStateWithLifecycle()
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
 
@@ -75,8 +84,46 @@ fun CompetitionDetailScreen(
         if (exit != null) currentOnExit(exit)
     }
 
+    val message = matchState.message
+    val messageText = message?.let {
+        if (it.error != null) stringResource(it.error.toErrorMessage().textRes)
+        else stringResource(if (it.savedMatchId != null) R.string.match_saved else R.string.match_action_done)
+    }
+    val undoLabel = stringResource(R.string.match_undo)
+    val retryLabel = stringResource(R.string.action_retry)
+    val canSnackbarUndo = message?.savedMatchId != null && matchState.syncError == null
+    val canSnackbarRetry = message?.error?.toErrorMessage()?.retryable == true
+    LaunchedEffect(message?.id) {
+        if (message != null && messageText != null) {
+            val result = snackbarHostState.showSnackbar(messageText,
+                actionLabel = if (canSnackbarUndo) undoLabel else if (canSnackbarRetry) retryLabel else null)
+            matchViewModel.messageShown(message.id)
+            if (result == SnackbarResult.ActionPerformed) {
+                if (canSnackbarUndo) message.savedMatchId?.let(matchViewModel::undo)
+                else matchViewModel.refresh()
+            }
+        }
+    }
+    LaunchedEffect(matchState.navigation) {
+        matchState.navigation?.let { target ->
+            viewModel.selectTab(if (target == BracketNavigation.Bracket) CompetitionDetailTab.Bracket else CompetitionDetailTab.Participants)
+            matchViewModel.navigationHandled()
+        }
+    }
+    LaunchedEffect(matchState.competitionMissing) {
+        if (matchState.competitionMissing) currentOnExit(CompetitionDetailExit.NotFound)
+    }
+    MatchOverlays(matchState, matchViewModel)
+
     CompetitionDetailContent(
         uiState = uiState,
+        onResetBracket = matchViewModel::requestReset,
+        resetEnabled = matchState.canReset,
+        bracketContent = { _, padding ->
+            BracketContent(matchState, padding, matchViewModel::selectRound, matchViewModel::openResult,
+                matchViewModel::requestUndo, matchViewModel::refresh,
+                { viewModel.selectTab(CompetitionDetailTab.Participants) })
+        },
         snackbarHostState = snackbarHostState,
         onNavigateBack = onNavigateBack,
         onSelectTab = viewModel::selectTab,
@@ -89,6 +136,14 @@ fun CompetitionDetailScreen(
                 participantType = competition.participantType,
                 competitionStatus = competition.status,
                 contentPadding = contentPadding,
+                onGenerateBracket = matchViewModel::requestGenerate,
+                onOpenBracket = { viewModel.selectTab(CompetitionDetailTab.Bracket) },
+                canGenerateBracket = matchState.canGenerate,
+                matchBusy = matchState.isMutating || matchState.isRefreshing || matchState.confirmation != null,
+                matchHeader = {
+                    if (matchState.syncError != null) MatchSyncWarning(matchViewModel::refresh,
+                        !matchState.isRefreshing && !matchState.isMutating)
+                },
             )
         },
         modifier = modifier,
@@ -127,10 +182,14 @@ internal fun CompetitionDetailContent(
     onRetry: () -> Unit,
     participantContent: @Composable (Competition, PaddingValues) -> Unit,
     modifier: Modifier = Modifier,
+    bracketContent: @Composable (Competition, PaddingValues) -> Unit = { _, _ -> },
+    onResetBracket: () -> Unit = {},
+    resetEnabled: Boolean = false,
 ) {
     val competition = uiState.competition
     val editLabel = stringResource(R.string.action_edit)
     val deleteLabel = stringResource(R.string.action_delete)
+    val resetLabel = stringResource(R.string.match_reset)
 
     DetailTabsTemplate(
         title = competition?.name.orEmpty(),
@@ -144,6 +203,9 @@ internal fun CompetitionDetailContent(
             // Aksi yang tidak berlaku pada status saat ini disembunyikan, bukan dinonaktifkan (hal. 8).
             OverflowMenu(
                 actions = buildList {
+                    if (competition?.status == CompetitionStatus.IN_MATCH) {
+                        add(MenuAction(resetLabel, onResetBracket, destructive = true, enabled = resetEnabled))
+                    }
                     if (uiState.canEdit) add(MenuAction(label = editLabel, onClick = onEdit))
                     if (uiState.canDelete) {
                         add(MenuAction(label = deleteLabel, onClick = onDelete, destructive = true))
@@ -173,12 +235,7 @@ internal fun CompetitionDetailContent(
                 CompetitionDetailTab.Participants ->
                     participantContent(competition, contentPadding)
 
-                CompetitionDetailTab.Bracket -> TabPlaceholder(
-                    title = stringResource(R.string.competition_tab_bracket),
-                    message = stringResource(R.string.competition_tab_bracket_placeholder),
-                    icon = AppIcons.AccountTree,
-                    contentPadding = contentPadding,
-                )
+                CompetitionDetailTab.Bracket -> bracketContent(competition, contentPadding)
             }
         }
     }

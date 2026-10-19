@@ -22,12 +22,12 @@ object CompetitionRules {
     /** Tambah, ubah, dan hapus peserta: hanya saat Pendaftaran. */
     fun canManageParticipants(status: CompetitionStatus): Boolean = status == CompetitionStatus.OPEN
 
-//    /** Buat bracket: saat Pendaftaran dengan 2–16 peserta (`INVALID_PARTICIPANT_COUNT`). */
-//    fun canGenerateBracket(status: CompetitionStatus, participantCount: Int): Boolean =
-//        status == CompetitionStatus.OPEN && BracketShape.isSupported(participantCount)
+    /** Buat bracket: saat Pendaftaran dengan 2–16 peserta (`INVALID_PARTICIPANT_COUNT`). */
+    fun canGenerateBracket(status: CompetitionStatus, participantCount: Int): Boolean =
+        status == CompetitionStatus.OPEN && BracketShape.isSupported(participantCount)
 
-//    /** Reset bracket: hanya saat Berlangsung (`COMPETITION_NOT_IN_MATCH`). */
-//    fun canResetBracket(status: CompetitionStatus): Boolean = status == CompetitionStatus.IN_MATCH
+    /** Reset bracket: hanya saat Berlangsung (`COMPETITION_NOT_IN_MATCH`). */
+    fun canResetBracket(status: CompetitionStatus): Boolean = status == CompetitionStatus.IN_MATCH
 
     /** Jenis peserta terkunci setelah kompetisi memiliki peserta (`PARTICIPANT_TYPE_LOCKED`). */
     fun isParticipantTypeLocked(participantCount: Int): Boolean = participantCount > 0
